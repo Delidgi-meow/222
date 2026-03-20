@@ -38,8 +38,10 @@ location:Place·Room
 weather:short
 atmosphere:short
 characters:all present
-costume:Name=outfit (each char + {{user}})
+costume:Name=outfit
+costume:Name2=outfit
 </world>
+IMPORTANT: Write ONE separate "costume:" line per character. Do NOT merge multiple characters into one line.
 <event>level|summary 20-50 words</event>
 Levels: обычное/важное/ключевое
 <sims>
@@ -53,6 +55,12 @@ Write sims ONLY for {{char}} and {{user}}. Use real names. Not for NPCs.
 CharName|emotion|Inner monologue 2-3 sentences. Physical sensations, desires, fears.
 </thoughts>
 Write thoughts ONLY for {{char}} and NPCs. Do NOT write thoughts for {{user}}.
+<location>Place·Room|chars=Name1,Name2|связь=Place·Room2,Place·Room3</location>
+List ALL rooms/areas that exist in the current setting. Include every room even if no one is there (omit chars= then).
+Example:
+<location>Дом·Гостиная|chars=Даниил,Татьяна|связь=Дом·Кухня,Дом·Коридор</location>
+<location>Дом·Кухня|связь=Дом·Гостиная</location>
+<location>Дом·Спальня|связь=Дом·Коридор</location>
 
 OPTIONAL (only on change):
 <health>
@@ -80,7 +88,6 @@ CharName.income:amount₽|source
 </wallet>
 <npc>Name|внешность=desc|характер=traits|отношение=relation|пол:m/f|возраст:N|birthday:YYYY/M/D</npc>
 <affection>Name=+/-N|reason</affection>
-<location>Place·Room|описание=desc|связь=Place·Room2,Place·Room3</location>
 <agenda>YYYY/M/D|task</agenda>
 <agenda->completed task</agenda->`;
 
@@ -95,7 +102,8 @@ function parse(msg){
     const R={world:null,events:[],sims:{},health:{},cycle:null,diary:[],wallet:{},npcs:{},agenda:[],agendaDel:[],affection:{},thoughts:[],locations:[]};
     let has=false,m;
     // world
-    const wR=/<world>([\s\S]*?)<\/world>/gi;while((m=wR.exec(msg))){const w={time:'',location:'',weather:'',atmosphere:'',characters:[],costumes:{}};for(const l of pl(m[1])){const p=kv(l);if(!p)continue;if(p.k==='time')w.time=p.v;else if(p.k==='location')w.location=p.v;else if(p.k==='weather')w.weather=p.v;else if(p.k==='atmosphere')w.atmosphere=p.v;else if(p.k==='characters')w.characters=p.v.split(/[,，]/).map(c=>c.trim()).filter(Boolean);else if(p.k==='costume'){const eq=p.v.indexOf('=');if(eq>0)w.costumes[p.v.substring(0,eq).trim()]=p.v.substring(eq+1).trim();}}R.world=w;has=true;}
+    const wR=/<world>([\s\S]*?)<\/world>/gi;while((m=wR.exec(msg))){const w={time:'',location:'',weather:'',atmosphere:'',characters:[],costumes:{}};for(const l of pl(m[1])){const p=kv(l);if(!p)continue;if(p.k==='time')w.time=p.v;else if(p.k==='location')w.location=p.v;else if(p.k==='weather')w.weather=p.v;else if(p.k==='atmosphere')w.atmosphere=p.v;else if(p.k==='characters')w.characters=p.v.split(/[,，]/).map(c=>c.trim()).filter(Boolean);else if(p.k==='costume'){// handle "Name=outfit" but also multiple chars separated by ";"
+            const parts=p.v.split(/;(?=\s*[^;]+?=)/);for(const part of parts){const eq=part.indexOf('=');if(eq>0)w.costumes[part.substring(0,eq).trim()]=part.substring(eq+1).trim();}}}R.world=w;has=true;}
     // event
     const eR=/<event>([\s\S]*?)<\/event>/gi;while((m=eR.exec(msg))){for(const l of pl(m[1])){const pp=l.indexOf('|');R.events.push(pp>0?{level:l.substring(0,pp).trim(),summary:l.substring(pp+1).trim()}:{level:'обычное',summary:l});}has=true;}
     // thoughts
@@ -115,7 +123,7 @@ function parse(msg){
     // affection
     const aR=/<affection>([\s\S]*?)<\/affection>/gi;while((m=aR.exec(msg))){for(const l of pl(m[1])){const eq=l.indexOf('=');if(eq<=0)continue;const name=l.substring(0,eq).trim(),rest=l.substring(eq+1).trim();const pp=rest.indexOf('|');const vs=pp>0?rest.substring(0,pp).trim():rest;const reason=pp>0?rest.substring(pp+1).trim():'';const n=parseFloat(vs);if(!isNaN(n))R.affection[name]={t:vs.startsWith('+')||vs.startsWith('-')?'r':'a',v:n,r:reason};}has=true;}
     // location
-    const lR=/<location>([\s\S]*?)<\/location>/gi;while((m=lR.exec(msg))){for(const l of pl(m[1])){const pts=l.split('|').map(x=>x.trim());if(!pts[0])continue;const loc={name:pts[0],desc:'',conn:[]};for(let i=1;i<pts.length;i++){const eq=pts[i].indexOf('=');if(eq<=0)continue;const k=pts[i].substring(0,eq).trim().toLowerCase(),v=pts[i].substring(eq+1).trim();if(k==='описание'||k==='desc')loc.desc=v;else if(k==='связь'||k==='связи'||k==='connection')loc.conn=v.split(/[,，]/).map(x=>x.trim()).filter(Boolean);}R.locations.push(loc);}has=true;}
+    const lR=/<location>([\s\S]*?)<\/location>/gi;while((m=lR.exec(msg))){for(const l of pl(m[1])){const pts=l.split('|').map(x=>x.trim());if(!pts[0])continue;const loc={name:pts[0],desc:'',conn:[],chars:[]};for(let i=1;i<pts.length;i++){const eq=pts[i].indexOf('=');if(eq<=0)continue;const k=pts[i].substring(0,eq).trim().toLowerCase(),v=pts[i].substring(eq+1).trim();if(k==='описание'||k==='desc')loc.desc=v;else if(k==='связь'||k==='связи'||k==='connection')loc.conn=v.split(/[,，]/).map(x=>x.trim()).filter(Boolean);else if(k==='chars'||k==='персонажи')loc.chars=v.split(/[,，]/).map(x=>x.trim()).filter(Boolean);}R.locations.push(loc);}has=true;}
     // agenda
     const agR=/<agenda>([\s\S]*?)<\/agenda>/gi;while((m=agR.exec(msg))){for(const l of pl(m[1])){const pp=l.indexOf('|');R.agenda.push(pp>0?{d:l.substring(0,pp).trim(),t:l.substring(pp+1).trim()}:{d:'',t:l});}has=true;}
     const agdR=/<agenda->([\s\S]*?)<\/agenda->/gi;while((m=agdR.exec(msg))){for(const l of pl(m[1]))if(l)R.agendaDel.push(l);has=true;}
@@ -141,7 +149,7 @@ function agg(){
         if(M.affection)for(const[n,d]of Object.entries(M.affection)){if(!s.aff[n])s.aff[n]={v:0,r:''};if(d.t==='a')s.aff[n].v=d.v;else s.aff[n].v+=d.v;if(d.r)s.aff[n].r=d.r;}
         if(M.agendaDel?.length)for(const del of M.agendaDel)s.agenda=s.agenda.filter(a=>!a.t.toLowerCase().includes(del.toLowerCase()));
         if(M.agenda?.length)for(const a of M.agenda)if(!s.agenda.some(x=>x.t===a.t))s.agenda.push({...a,done:false});
-        if(M.locations?.length)for(const loc of M.locations){const id=loc.name.toLowerCase().replace(/[·\s>/\\]/g,'_').replace(/[^a-zа-яё0-9_]/gi,'');if(!s.mapN[id])s.mapN[id]={name:loc.name,desc:loc.desc,x:40+Object.keys(s.mapN).length%4*120,y:30+Math.floor(Object.keys(s.mapN).length/4)*70};else if(loc.desc)s.mapN[id].desc=loc.desc;for(const cn of loc.conn){const cid=cn.toLowerCase().replace(/[·\s>/\\]/g,'_').replace(/[^a-zа-яё0-9_]/gi,'');if(!s.mapN[cid])s.mapN[cid]={name:cn,desc:'',x:s.mapN[id].x+130,y:s.mapN[id].y+40};if(!s.mapE.some(e=>(e.a===id&&e.b===cid)||(e.a===cid&&e.b===id)))s.mapE.push({a:id,b:cid});}}
+        if(M.locations?.length)for(const loc of M.locations){const id=loc.name.toLowerCase().replace(/[·\s>/\\]/g,'_').replace(/[^a-zа-яё0-9_]/gi,'');if(!s.mapN[id])s.mapN[id]={name:loc.name,desc:loc.desc,chars:[],x:40+Object.keys(s.mapN).length%4*120,y:30+Math.floor(Object.keys(s.mapN).length/4)*70};else if(loc.desc)s.mapN[id].desc=loc.desc;if(loc.chars?.length)s.mapN[id].chars=[...loc.chars];for(const cn of loc.conn){const cid=cn.toLowerCase().replace(/[·\s>/\\]/g,'_').replace(/[^a-zа-яё0-9_]/gi,'');if(!s.mapN[cid])s.mapN[cid]={name:cn,desc:'',chars:[],x:s.mapN[id].x+130,y:s.mapN[id].y+40};if(!s.mapE.some(e=>(e.a===id&&e.b===cid)||(e.a===cid&&e.b===id)))s.mapE.push({a:id,b:cid});}}
     }
     if(s.time){const mt=s.time.match(/(\d{4})\D+(\d{1,2})/);if(mt){cY=+mt[1];cM=+mt[2];}}
     return s;
@@ -164,7 +172,7 @@ function onMsg(idx){if(!S.enabled)return;const chat=getContext()?.chat;if(!chat|
 function onChat(){if(!S.enabled)return;const chat=getContext()?.chat||[];for(let i=0;i<chat.length;i++)if(!chat[i].chronicle_meta&&chat[i].mes&&hasCD(chat[i].mes)){const p=parse(chat[i].mes);if(p)chat[i].chronicle_meta=p;}LS=agg();refreshAll();}
 
 // ══ UI ══
-const SC={hunger:{n:'Голод',i:'🍽',bg:'var(--chr-peach-bg)',bd:'var(--chr-peach-border)',c:'var(--chr-peach)'},hygiene:{n:'Гигиена',i:'🛁',bg:'var(--chr-blue-bg)',bd:'var(--chr-blue-border)',c:'var(--chr-blue)'},sleep:{n:'Сон',i:'😴',bg:'var(--chr-lilac-bg)',bd:'var(--chr-lilac-border)',c:'var(--chr-lilac)'},arousal:{n:'Возбуждение',i:'🔥',bg:'var(--chr-rose-bg)',bd:'var(--chr-rose-border)',c:'var(--chr-rose)'}};
+const SC={hunger:{n:'Голод',i:'fa-solid fa-utensils',bg:'var(--chr-peach-bg)',bd:'var(--chr-peach-border)',c:'var(--chr-peach)'},hygiene:{n:'Гигиена',i:'fa-solid fa-shower',bg:'var(--chr-blue-bg)',bd:'var(--chr-blue-border)',c:'var(--chr-blue)'},sleep:{n:'Сон',i:'fa-solid fa-moon',bg:'var(--chr-lilac-bg)',bd:'var(--chr-lilac-border)',c:'var(--chr-lilac)'},arousal:{n:'Возбуждение',i:'fa-solid fa-fire',bg:'var(--chr-rose-bg)',bd:'var(--chr-rose-border)',c:'var(--chr-rose)'}};
 const MO=['','Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
 function esc(s){const d=document.createElement('div');d.textContent=s;return d.innerHTML;}
 function rn(cn){return cn==='_default'?(getContext()?.name2||'Персонаж'):cn;}
@@ -185,7 +193,7 @@ function rSims(){
     const $c=$('#chr-sims').empty();const names=Object.keys(LS.sims);
     if(!names.length){$c.append('<div class="chr-empty"><i class="fa-solid fa-heart-pulse"></i>Нет данных</div>');return;}
     for(const cn of names){const stats=LS.sims[cn];
-        let cards='';for(const[key,cfg]of Object.entries(SC)){const val=stats[key]??70;cards+=`<div class="chr-sim-card" style="background:${cfg.bg};border:1px solid ${cfg.bd};"><div class="chr-sim-card__icon" style="color:${cfg.c};">${cfg.i}</div><div class="chr-sim-card__value" style="color:${cfg.c};">${val}</div><div class="chr-sim-card__label">${cfg.n}</div><div class="chr-sim-card__bar" style="width:${val}%;background:${cfg.c};"></div></div>`;}
+        let cards='';for(const[key,cfg]of Object.entries(SC)){const val=stats[key]??70;cards+=`<div class="chr-sim-card" style="background:${cfg.bg};border:1px solid ${cfg.bd};"><div class="chr-sim-card__icon" style="color:${cfg.c};"><i class="${cfg.i}"></i></div><div class="chr-sim-card__value" style="color:${cfg.c};">${val}</div><div class="chr-sim-card__label">${cfg.n}</div><div class="chr-sim-card__bar" style="width:${val}%;background:${cfg.c};"></div></div>`;}
         $c.append(`<div style="margin-bottom:10px;"><div style="font-family:var(--chr-ff);font-size:12px;font-weight:600;color:var(--chr-text-m);margin-bottom:6px;padding:0 4px;"><i class="fa-solid fa-user" style="margin-right:4px;"></i>${esc(rn(cn))}</div><div class="chr-sims-grid">${cards}</div></div>`);
     }
 }
@@ -194,19 +202,19 @@ function rHealth(){
     const $c=$('#chr-health').empty();const names=Object.keys(LS.health);
     if(!names.length){$c.append('<div class="chr-empty"><i class="fa-solid fa-kit-medical"></i>Нет данных</div>');return;}
     for(const cn of names){const h=LS.health[cn];let html=`<div style="font-family:var(--chr-ff);font-size:12px;font-weight:600;color:var(--chr-text-m);margin-bottom:6px;"><i class="fa-solid fa-user"></i> ${esc(rn(cn))}</div>`;
-        html+=`<div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:4px;"><span class="chr-tag" style="background:${h.hp<50?'var(--chr-rose-bg)':'var(--chr-mint-bg)'};color:${h.hp<50?'var(--chr-rose)':'var(--chr-mint)'};">❤ HP ${h.hp}</span>`;
-        if(h.intox?.v>0)html+=`<span class="chr-tag" style="background:var(--chr-peach-bg);color:var(--chr-peach);">🍷 ${h.intox.v}%${h.intox.r?' — '+esc(h.intox.r):''}</span>`;
+        html+=`<div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:4px;"><span class="chr-tag" style="background:${h.hp<50?'var(--chr-rose-bg)':'var(--chr-mint-bg)'};color:${h.hp<50?'var(--chr-rose)':'var(--chr-mint)'};" title="HP"><i class="fa-solid fa-heart"></i> ${h.hp}</span>`;
+        if(h.intox?.v>0)html+=`<span class="chr-tag" style="background:var(--chr-peach-bg);color:var(--chr-peach);" title="Опьянение"><i class="fa-solid fa-wine-glass"></i> ${h.intox.v}%${h.intox.r?' — '+esc(h.intox.r):''}</span>`;
         html+=`</div>`;
-        for(const inj of h.injuries)html+=`<div class="chr-inj">• ${esc(inj.n)} <span class="chr-tag">${esc(inj.s)}</span></div>`;
-        for(const hab of h.habits)html+=`<div class="chr-hab">🚬 ${esc(hab.n)} <span style="color:var(--chr-text-d);">${esc(hab.d)}</span></div>`;
+        for(const inj of h.injuries)html+=`<div class="chr-inj"><i class="fa-solid fa-bandage" style="width:14px;text-align:center;"></i> ${esc(inj.n)} <span class="chr-tag">${esc(inj.s)}</span></div>`;
+        for(const hab of h.habits)html+=`<div class="chr-hab"><i class="fa-solid fa-smoking" style="width:14px;text-align:center;"></i> ${esc(hab.n)} <span style="color:var(--chr-text-d);">${esc(hab.d)}</span></div>`;
         $c.append(`<div class="chr-card" style="padding:10px 12px;margin-bottom:6px;">${html}</div>`);
     }
     const cy=LS.cycle;if(cy.day!==null){$('#chr-cycle').show();const $cc=$('#chr-cycle-c').empty();let html=`<div style="display:flex;gap:10px;align-items:flex-start;"><span style="font-size:24px;font-weight:700;color:var(--chr-rose);font-family:var(--chr-ff);">День${cy.day}</span><div style="flex:1;">`;
         if(cy.phase)html+=`<div style="font-size:12px;font-weight:600;color:var(--chr-text);">${esc(cy.phase)}</div>`;
-        const tags=[];if(cy.fertile)tags.push(`<span class="chr-tag" style="background:${cy.fertile.match(/yes|да/i)?'var(--chr-rose-bg)':'var(--chr-mint-bg)'};color:${cy.fertile.match(/yes|да/i)?'var(--chr-rose)':'var(--chr-mint)'};">🌱 ${esc(cy.fertile)}</span>`);if(cy.libido)tags.push(`<span class="chr-tag" style="background:var(--chr-rose-bg);color:var(--chr-rose);">🔥 ${esc(cy.libido)}</span>`);
+        const tags=[];if(cy.fertile)tags.push(`<span class="chr-tag" style="background:${cy.fertile.match(/yes|да/i)?'var(--chr-rose-bg)':'var(--chr-mint-bg)'};color:${cy.fertile.match(/yes|да/i)?'var(--chr-rose)':'var(--chr-mint)'};" title="Фертильность"><i class="fa-solid fa-leaf"></i> ${esc(cy.fertile)}</span>`);if(cy.libido)tags.push(`<span class="chr-tag" style="background:var(--chr-rose-bg);color:var(--chr-rose);" title="Либидо"><i class="fa-solid fa-fire"></i> ${esc(cy.libido)}</span>`);
         if(tags.length)html+=`<div style="display:flex;gap:3px;margin-top:3px;">${tags.join('')}</div>`;
-        if(cy.mood)html+=`<div style="font-size:11px;color:var(--chr-text-m);margin-top:3px;">💭 ${esc(cy.mood)}</div>`;
-        if(cy.physical)html+=`<div style="font-size:11px;color:var(--chr-text-m);margin-top:2px;">🩺 ${esc(cy.physical)}</div>`;
+        if(cy.mood)html+=`<div style="font-size:11px;color:var(--chr-text-m);margin-top:3px;"><i class="fa-solid fa-comment" style="width:14px;text-align:center;"></i> ${esc(cy.mood)}</div>`;
+        if(cy.physical)html+=`<div style="font-size:11px;color:var(--chr-text-m);margin-top:2px;"><i class="fa-solid fa-stethoscope" style="width:14px;text-align:center;"></i> ${esc(cy.physical)}</div>`;
         html+=`</div></div>`;$cc.append(html);
     }else $('#chr-cycle').hide();
 }
@@ -216,11 +224,11 @@ function rTl(){const $t=$('#chr-tl').empty();if(LS.events.length)for(const ev of
 function rChars(){
     const $d=$('#chr-diary').empty();if(LS.diary.length)for(const d of LS.diary.slice(-20).reverse())$d.append(`<div class="chr-diary chr-card"><div class="chr-diary__who"><i class="fa-solid fa-feather"></i>${esc(d.who)}</div><div class="chr-diary__text">${esc(d.text)}</div><div class="chr-diary__when">${esc(d.time)}</div></div>`);else $d.append('<div class="chr-empty"><i class="fa-solid fa-book"></i>Записей нет</div>');
     const $n=$('#chr-npcs').empty();const ctx=getContext();
-    if(S.userBday)$n.append(`<div class="chr-card" style="padding:8px 10px;margin-bottom:4px;display:flex;align-items:center;gap:8px;"><span style="font-size:14px;">🎂</span><span style="font-size:12px;color:var(--chr-text);font-weight:600;">${esc(ctx?.name1||'User')}</span><span class="chr-tag">${esc(S.userBday)}</span></div>`);
-    if(S.botBday)$n.append(`<div class="chr-card" style="padding:8px 10px;margin-bottom:4px;display:flex;align-items:center;gap:8px;"><span style="font-size:14px;">🎂</span><span style="font-size:12px;color:var(--chr-text);font-weight:600;">${esc(ctx?.name2||'Bot')}</span><span class="chr-tag">${esc(S.botBday)}</span></div>`);
-    for(const name of Object.keys(LS.npcs)){const npc=LS.npcs[name];const af=LS.aff[name];const pr=LS.chars.includes(name);let tags='';if(npc.gen)tags+=`<span class="chr-tag">${esc(npc.gen)}</span>`;if(npc.age)tags+=`<span class="chr-tag">${npc.age}</span>`;if(npc.rel)tags+=`<span class="chr-tag" style="background:var(--chr-blue-bg);color:var(--chr-blue);">${esc(npc.rel)}</span>`;if(af){const cl=af.v>=0?'mint':'rose';tags+=`<span class="chr-tag" style="background:var(--chr-${cl}-bg);color:var(--chr-${cl});">♥${af.v>0?'+':''}${af.v}</span>`;}if(pr)tags+=`<span class="chr-tag" style="background:var(--chr-peach-bg);color:var(--chr-peach);">в сцене</span>`;
+    if(S.userBday)$n.append(`<div class="chr-card" style="padding:8px 10px;margin-bottom:4px;display:flex;align-items:center;gap:8px;"><i class="fa-solid fa-cake-candles" style="font-size:14px;color:var(--chr-rose);"></i><span style="font-size:12px;color:var(--chr-text);font-weight:600;">${esc(ctx?.name1||'User')}</span><span class="chr-tag">${esc(S.userBday)}</span></div>`);
+    if(S.botBday)$n.append(`<div class="chr-card" style="padding:8px 10px;margin-bottom:4px;display:flex;align-items:center;gap:8px;"><i class="fa-solid fa-cake-candles" style="font-size:14px;color:var(--chr-rose);"></i><span style="font-size:12px;color:var(--chr-text);font-weight:600;">${esc(ctx?.name2||'Bot')}</span><span class="chr-tag">${esc(S.botBday)}</span></div>`);
+    for(const name of Object.keys(LS.npcs)){const npc=LS.npcs[name];const af=LS.aff[name];const pr=LS.chars.includes(name);let tags='';if(npc.gen)tags+=`<span class="chr-tag">${esc(npc.gen)}</span>`;if(npc.age)tags+=`<span class="chr-tag">${npc.age}</span>`;if(npc.rel)tags+=`<span class="chr-tag" style="background:var(--chr-blue-bg);color:var(--chr-blue);">${esc(npc.rel)}</span>`;if(af){const cl=af.v>=0?'mint':'rose';tags+=`<span class="chr-tag" style="background:var(--chr-${cl}-bg);color:var(--chr-${cl});"><i class="fa-solid fa-heart" style="font-size:9px;"></i> ${af.v>0?'+':''}${af.v}</span>`;}if(pr)tags+=`<span class="chr-tag" style="background:var(--chr-peach-bg);color:var(--chr-peach);">в сцене</span>`;
         const colors=['var(--chr-lilac-bg)','var(--chr-blue-bg)','var(--chr-peach-bg)','var(--chr-rose-bg)','var(--chr-mint-bg)'];const ci=name.length%colors.length;
-        $n.append(`<div class="chr-npc chr-card">${npc.bd?`<div class="chr-npc__bd">🎂 ${esc(npc.bd)}</div>`:''}<div class="chr-npc__av" style="background:${colors[ci]};color:var(--chr-text);">${name.charAt(0).toUpperCase()}</div><div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:600;color:var(--chr-text);">${esc(name)}</div>${npc.app?`<div style="font-size:10px;color:var(--chr-text-d);">${esc(npc.app)}</div>`:''}<div class="chr-npc__tags" style="margin-top:3px;">${tags}</div></div></div>`);}
+        $n.append(`<div class="chr-npc chr-card">${npc.bd?`<div class="chr-npc__bd"><i class="fa-solid fa-cake-candles"></i> ${esc(npc.bd)}</div>`:''}<div class="chr-npc__av" style="background:${colors[ci]};color:var(--chr-text);">${name.charAt(0).toUpperCase()}</div><div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:600;color:var(--chr-text);">${esc(name)}</div>${npc.app?`<div style="font-size:10px;color:var(--chr-text-d);">${esc(npc.app)}</div>`:''}<div class="chr-npc__tags" style="margin-top:3px;">${tags}</div></div></div>`);}
 }
 
 function rItems(){
@@ -249,10 +257,16 @@ function rMap(){
     const nodes=LS.mapN,edges=LS.mapE,ids=Object.keys(nodes);
     if(!ids.length){$('#chr-map-e').show();$('#chr-map-c').hide();return;}$('#chr-map-e').hide();$('#chr-map-c').show();
     const curId=LS.loc.toLowerCase().replace(/[·\s>/\\]/g,'_').replace(/[^a-zа-яё0-9_]/gi,'');
-    for(const e of edges){const a=nodes[e.a],b=nodes[e.b];if(!a||!b)continue;const line=document.createElementNS('http://www.w3.org/2000/svg','line');line.setAttribute('x1',a.x+55);line.setAttribute('y1',a.y+18);line.setAttribute('x2',b.x+55);line.setAttribute('y2',b.y+18);line.classList.add('chr-map-edge');svg.appendChild(line);}
-    for(const[id,node]of Object.entries(nodes)){const g=document.createElementNS('http://www.w3.org/2000/svg','g');g.classList.add('chr-map-node');if(id===curId)g.classList.add('current');g.setAttribute('transform',`translate(${node.x},${node.y})`);const rect=document.createElementNS('http://www.w3.org/2000/svg','rect');rect.setAttribute('width','110');rect.setAttribute('height','36');g.appendChild(rect);const sn=node.name.includes('·')?node.name.split('·').pop():node.name;const text=document.createElementNS('http://www.w3.org/2000/svg','text');text.setAttribute('x','55');text.setAttribute('y','18');text.textContent=sn.length>14?sn.substring(0,12)+'…':sn;g.appendChild(text);
+    for(const e of edges){const a=nodes[e.a],b=nodes[e.b];if(!a||!b)continue;const line=document.createElementNS('http://www.w3.org/2000/svg','line');line.setAttribute('x1',a.x+60);line.setAttribute('y1',a.y+22);line.setAttribute('x2',b.x+60);line.setAttribute('y2',b.y+22);line.classList.add('chr-map-edge');svg.appendChild(line);}
+    for(const[id,node]of Object.entries(nodes)){const g=document.createElementNS('http://www.w3.org/2000/svg','g');g.classList.add('chr-map-node');if(id===curId)g.classList.add('current');g.setAttribute('transform',`translate(${node.x},${node.y})`);
+        const chars=node.chars||[];const nodeH=chars.length?54:36;
+        const rect=document.createElementNS('http://www.w3.org/2000/svg','rect');rect.setAttribute('width','120');rect.setAttribute('height',String(nodeH));rect.setAttribute('rx','8');g.appendChild(rect);
+        const sn=node.name.includes('·')?node.name.split('·').pop():node.name;
+        const text=document.createElementNS('http://www.w3.org/2000/svg','text');text.setAttribute('x','60');text.setAttribute('y','14');text.setAttribute('font-size','10');text.setAttribute('font-weight','600');text.setAttribute('text-anchor','middle');text.setAttribute('dominant-baseline','central');text.setAttribute('fill','rgba(255,255,255,0.78)');text.setAttribute('font-family','Comfortaa,system-ui,sans-serif');text.setAttribute('pointer-events','none');text.textContent=sn.length>15?sn.substring(0,13)+'…':sn;g.appendChild(text);
+        if(chars.length){const cx=chars.map((c,ci)=>{const ax=16+ci*20;const av=document.createElementNS('http://www.w3.org/2000/svg','circle');av.setAttribute('cx',String(ax));av.setAttribute('cy','36');av.setAttribute('r','8');av.setAttribute('fill','rgba(150,185,210,0.15)');av.setAttribute('stroke','rgba(150,185,210,0.3)');av.setAttribute('stroke-width','1');g.appendChild(av);const at=document.createElementNS('http://www.w3.org/2000/svg','text');at.setAttribute('x',String(ax));at.setAttribute('y','36');at.setAttribute('font-size','8');at.setAttribute('font-weight','700');at.setAttribute('text-anchor','middle');at.setAttribute('dominant-baseline','central');at.setAttribute('fill','rgba(200,220,235,0.9)');at.setAttribute('pointer-events','none');at.textContent=c.charAt(0).toUpperCase();g.appendChild(at);return ax;});if(chars.length>0){const lbl=document.createElementNS('http://www.w3.org/2000/svg','text');lbl.setAttribute('x',String(16+chars.length*20+4));lbl.setAttribute('y','36');lbl.setAttribute('font-size','9');lbl.setAttribute('dominant-baseline','central');lbl.setAttribute('fill','rgba(255,255,255,0.35)');lbl.setAttribute('pointer-events','none');lbl.textContent=chars.length===1?chars[0].split(' ')[0]:chars.map(c=>c.split(' ')[0]).join(', ');lbl.setAttribute('font-family','Comfortaa,system-ui,sans-serif');// truncate if needed
+        const maxW=110-(16+chars.length*20+4);g.appendChild(lbl);}}
         let drag=false,ox,oy;g.addEventListener('pointerdown',ev=>{drag=true;ox=ev.clientX-node.x;oy=ev.clientY-node.y;g.setPointerCapture(ev.pointerId);});g.addEventListener('pointermove',ev=>{if(!drag)return;node.x=Math.max(0,(ev.clientX-ox));node.y=Math.max(0,(ev.clientY-oy));rMap();});g.addEventListener('pointerup',()=>{drag=false;});svg.appendChild(g);}
-    let mx=500,my=300;for(const n of Object.values(nodes)){if(n.x+120>mx)mx=n.x+130;if(n.y+46>my)my=n.y+50;}svg.setAttribute('viewBox',`0 0 ${mx} ${my}`);
+    let mx=500,my=300;for(const n of Object.values(nodes)){const nh=(n.chars?.length)?54:36;if(n.x+130>mx)mx=n.x+140;if(n.y+nh+14>my)my=n.y+nh+20;}svg.setAttribute('viewBox',`0 0 ${mx} ${my}`);
 }
 
 // ── Tabs/Buttons ──
