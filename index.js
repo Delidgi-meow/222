@@ -59,12 +59,60 @@ CharName.sleep:0-100
 CharName.arousal:0-100
 </sims>
 Write sims ONLY for {{char}} and {{user}}. Use real names. Not for NPCs.
+Base these values on the current state from context and update them according to time passed and events.
+
+SIMS MECHANICS — apply every response based on elapsed time and events:
+
+PASSIVE DECAY per 2 hours of RP time:
+- hunger: -10 (body needs food)
+- hygiene: -5 (natural degradation)
+- sleep: -15 (fatigue builds)
+- arousal: +10 (base libido build-up)
+
+SLEEP (22:00–06:00 costs extra -25 sleep per 2h if awake):
+- sleeping 2-3h restores sleep to 25%, 4-5h→50%, 6-7h→75%, 8h→100%
+- coffee: +15 sleep for 2h, then -20 crash
+- energy drink: +25 sleep for 3h, then -35 crash
+
+FOOD events:
+- snack: hunger +20, then -10 crash after 1h
+- full meal: hunger +50
+- restaurant meal: hunger +60, costs 1000-3000 from wallet
+- fast food: hunger +40
+
+HYGIENE events:
+- physical activity, fight: hygiene -15
+- sex: hygiene -25
+- quick shower: hygiene +60
+- full shower: hygiene +80
+- bath: hygiene +90, sleep +10
+
+AROUSAL events:
+- sex/orgasm: arousal -50
+- cold shower: arousal -20
+- conflict/stress: arousal -30
+
+MANDATORY BEHAVIORAL CONSEQUENCES — must be reflected in narrative:
+- hunger < 15: character feels dizzy, irritable, difficulty concentrating, stomach cramps — show this in behavior
+- sleep < 15: heavy eyelids, slurred speech, coordination loss, micro-sleeps — show this in behavior
+- hygiene < 20 + arousal > 70: partner physically recoils, refuses intimacy, notices the smell
+- arousal > 85: character becomes distracted, hypersensitive to touch, intrusive thoughts — cannot fully focus on other things, behavior shifts noticeably
+- sleep = 0 OR hunger = 0: character FAINTS — collapses, wakes in 5-15 min with values at 3-5%
+- hunger < 15 + sleep < 20: double faint risk, any exertion triggers collapse
+- intoxication > 60: impaired judgment, slurred speech, emotional volatility
+- intoxication > 90: blackout risk, loss of motor control
 <thoughts>
 CharName|emotion|Inner monologue 2-3 sentences. Physical sensations, desires, fears.
 </thoughts>
-Write thoughts ONLY for {{char}} and NPCs. Do NOT write thoughts for {{user}}.
+Write thoughts ONLY for {{char}} and NPCs currently in the scene. Do NOT write thoughts for {{user}}.
 <location>Place·Room|chars=Name1,Name2|связь=Place·Room2,Place·Room3</location>
-List ALL rooms/areas that exist in the current setting. Include every room even if no one is there (omit chars= then).
+List ALL locations/rooms EVERY turn — even empty ones.
+CRITICAL RULES for chars=:
+- {{char}} and {{user}} MUST always appear in exactly ONE location — never omit them
+- Each character exists in ONE location only — if they moved, they MUST be removed from the old one
+- Locations with nobody: write the location WITHOUT chars= at all
+- EVERY turn re-declare ALL known locations, updating chars= as needed
+- When ИИ describes actions of a character — they must be in a location with chars= containing their name
 Example:
 <location>Дом·Гостиная|chars=Даниил,Татьяна|связь=Дом·Кухня,Дом·Коридор</location>
 <location>Дом·Кухня|связь=Дом·Гостиная</location>
@@ -87,8 +135,14 @@ physical:symptoms
 libido:low/normal/high
 </cycle>
 <diary>
-CharName|DETAILED diary entry. Write 4-5 full sentences minimum. Include: emotional state, specific thoughts about recent events, desires and fears, plans or intentions, physical sensations. Write diary for {{char}} and important NPCs. Do NOT write diary for {{user}}. Each entry should feel like reading someone's real private diary — raw, honest, detailed.
+CharName|diary entry text
 </diary>
+Rules:
+- Write diary for {{char}} AND every NPC who has inner life relevant to the scene. Do NOT write for {{user}}.
+- Each entry: 4-6 sentences. Raw, personal, private — like a real handwritten diary.
+- VARY the opening every time. NEVER start with the character's own name, date, or "Сегодня". Begin mid-thought, with an emotion, sensation, image, or fragment: "Я не понимаю...", "Руки до сих пор дрожат.", "Он снова...", "Не могу выкинуть из головы...", etc.
+- Each character's voice must feel distinct — age, background, personality affect how they write.
+- Include: what they felt, what they noticed about others, what they want, what they fear, what they will NOT say aloud.
 <wallet>
 CharName.balance:amount₽
 CharName.spend:category|amount₽|what
@@ -164,7 +218,19 @@ function agg(){
         if(M.affection)for(const[n,d]of Object.entries(M.affection)){if(!s.aff[n])s.aff[n]={v:0,r:''};if(d.t==='a')s.aff[n].v=d.v;else s.aff[n].v+=d.v;if(d.r)s.aff[n].r=d.r;}
         if(M.agendaDel?.length)for(const del of M.agendaDel)s.agenda=s.agenda.filter(a=>!a.t.toLowerCase().includes(del.toLowerCase()));
         if(M.agenda?.length)for(const a of M.agenda)if(!s.agenda.some(x=>x.t===a.t))s.agenda.push({...a,done:false});
-        if(M.locations?.length)for(const loc of M.locations){const id=loc.name.toLowerCase().replace(/[·\s>/\\]/g,'_').replace(/[^a-zа-яё0-9_]/gi,'');if(!s.mapN[id])s.mapN[id]={name:loc.name,desc:loc.desc,chars:[],x:40+Object.keys(s.mapN).length%4*120,y:30+Math.floor(Object.keys(s.mapN).length/4)*70};else if(loc.desc)s.mapN[id].desc=loc.desc;if(loc.chars?.length)s.mapN[id].chars=[...loc.chars];for(const cn of loc.conn){const cid=cn.toLowerCase().replace(/[·\s>/\\]/g,'_').replace(/[^a-zа-яё0-9_]/gi,'');if(!s.mapN[cid])s.mapN[cid]={name:cn,desc:'',chars:[],x:s.mapN[id].x+130,y:s.mapN[id].y+40};if(!s.mapE.some(e=>(e.a===id&&e.b===cid)||(e.a===cid&&e.b===id)))s.mapE.push({a:id,b:cid});}}
+        if(M.locations?.length){
+            // Clear chars from ALL existing nodes before applying this message's locations
+            // This ensures characters who moved are removed from old locations
+            for(const id of Object.keys(s.mapN))s.mapN[id].chars=[];
+            for(const loc of M.locations){
+                const id=loc.name.toLowerCase().replace(/[·\s>/\\]/g,'_').replace(/[^a-zа-яё0-9_]/gi,'');
+                if(!s.mapN[id])s.mapN[id]={name:loc.name,desc:loc.desc||'',chars:[],x:40+Object.keys(s.mapN).length%4*120,y:30+Math.floor(Object.keys(s.mapN).length/4)*70};
+                else{if(loc.desc)s.mapN[id].desc=loc.desc;}
+                // Only set chars if explicitly declared (empty array = no one here)
+                s.mapN[id].chars=loc.chars?.length?[...loc.chars]:[];
+                for(const cn of loc.conn){const cid=cn.toLowerCase().replace(/[·\s>/\\]/g,'_').replace(/[^a-zа-яё0-9_]/gi,'');if(!s.mapN[cid])s.mapN[cid]={name:cn,desc:'',chars:[],x:s.mapN[id].x+130,y:s.mapN[id].y+40};if(!s.mapE.some(e=>(e.a===id&&e.b===cid)||(e.a===cid&&e.b===id)))s.mapE.push({a:id,b:cid});}
+            }
+        }
     }
     if(s.time){const mt=s.time.match(/(\d{4})\D+(\d{1,2})/);if(mt){cY=+mt[1];cM=+mt[2];}}
     return s;
