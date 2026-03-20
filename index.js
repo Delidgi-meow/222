@@ -20,7 +20,15 @@ const DF={enabled:1,autoParse:1,injectContext:1,sendSims:1,sendHealth:1,sendCycl
 let S={};
 function loadS(){S=extension_settings[EN]?{...DF,...extension_settings[EN]}:{...DF};extension_settings[EN]=S;}
 function saveS(){extension_settings[EN]=S;saveSettingsDebounced();}
-function syncUI(){$('#s-sims').prop('checked',S.sendSims);$('#s-health').prop('checked',S.sendHealth);$('#s-cycle').prop('checked',S.sendCycle);$('#s-wallet').prop('checked',S.sendWallet);$('#s-diary').prop('checked',S.sendDiary);$('#s-ubday').val(S.userBday||'');$('#s-bbday').val(S.botBday||'');$('#s-prompt').val(S.customPrompt||'');}
+function syncUI(){
+    const ctx=getContext();
+    const uName=ctx?.name1||'{{user}}';
+    const bName=ctx?.name2||'{{char}}';
+    $('#s-sims').prop('checked',S.sendSims);$('#s-health').prop('checked',S.sendHealth);$('#s-cycle').prop('checked',S.sendCycle);$('#s-wallet').prop('checked',S.sendWallet);$('#s-diary').prop('checked',S.sendDiary);
+    $('#s-ubday').val(S.userBday||'');$('#s-bbday').val(S.botBday||'');$('#s-prompt').val(S.customPrompt||'');
+    $('#s-label-ubday').text(`ДР ${uName} (ГГГГ/М/Д)`);
+    $('#s-label-bbday').text(`ДР ${bName} (ГГГГ/М/Д)`);
+}
 function initSE(){const b=(s,k)=>$(document).on('change',s,function(){S[k]=$(this).prop('checked');saveS();});b('#s-sims','sendSims');b('#s-health','sendHealth');b('#s-cycle','sendCycle');b('#s-wallet','sendWallet');b('#s-diary','sendDiary');$(document).on('change','#s-ubday',function(){S.userBday=$(this).val().trim();saveS();});$(document).on('change','#s-bbday',function(){S.botBday=$(this).val().trim();saveS();});$(document).on('change','#s-prompt',function(){S.customPrompt=$(this).val();saveS();});$(document).on('click','#s-reset',()=>{S.customPrompt='';$('#s-prompt').val('');saveS();});}
 
 // ── Regex ──
@@ -169,7 +177,7 @@ function onPrompt(ed){if(!S.enabled||!S.injectContext)return;const s=agg();const
 
 // ══ EVENTS ══
 function onMsg(idx){if(!S.enabled)return;const chat=getContext()?.chat;if(!chat||idx<0||idx>=chat.length)return;if(!hasCD(chat[idx].mes))return;const p=parse(chat[idx].mes);if(p){chat[idx].chronicle_meta=p;}LS=agg();refreshAll();getContext().saveChat?.();}
-function onChat(){if(!S.enabled)return;const chat=getContext()?.chat||[];for(let i=0;i<chat.length;i++)if(!chat[i].chronicle_meta&&chat[i].mes&&hasCD(chat[i].mes)){const p=parse(chat[i].mes);if(p)chat[i].chronicle_meta=p;}LS=agg();refreshAll();}
+function onChat(){if(!S.enabled)return;const chat=getContext()?.chat||[];for(let i=0;i<chat.length;i++)if(!chat[i].chronicle_meta&&chat[i].mes&&hasCD(chat[i].mes)){const p=parse(chat[i].mes);if(p)chat[i].chronicle_meta=p;}LS=agg();refreshAll();syncUI();}
 
 // ══ UI ══
 const SC={hunger:{n:'Голод',i:'fa-solid fa-utensils',bg:'var(--chr-peach-bg)',bd:'var(--chr-peach-border)',c:'var(--chr-peach)'},hygiene:{n:'Гигиена',i:'fa-solid fa-shower',bg:'var(--chr-blue-bg)',bd:'var(--chr-blue-border)',c:'var(--chr-blue)'},sleep:{n:'Сон',i:'fa-solid fa-moon',bg:'var(--chr-lilac-bg)',bd:'var(--chr-lilac-border)',c:'var(--chr-lilac)'},arousal:{n:'Возбуждение',i:'fa-solid fa-fire',bg:'var(--chr-rose-bg)',bd:'var(--chr-rose-border)',c:'var(--chr-rose)'}};
