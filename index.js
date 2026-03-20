@@ -173,11 +173,50 @@ function agg(){
 // ══ PROMPT INJECTION ══
 function buildCtx(s){
     const L=[];
-    if(s.time)L.push(`[Время:${s.time}|Место:${s.loc}|Погода:${s.weather}]`);
-    for(const[cn,st]of Object.entries(s.sims)){const n=cn==='_default'?(getContext()?.name2||'Bot'):cn;L.push(`[${n}: голод=${st.hunger},гигиена=${st.hygiene},сон=${st.sleep},возб=${st.arousal}]`);}
-    for(const[cn,h]of Object.entries(s.health)){const n=cn==='_default'?(getContext()?.name2||'Bot'):cn;const p=[];if(h.hp<100)p.push(`HP:${h.hp}`);if(h.intox?.v>0)p.push(`Алко:${h.intox.v}`);for(const i of h.injuries)p.push(`Травма:${i.n}`);if(p.length)L.push(`[${n}: ${p.join(',')}]`);}
-    const bd=[];if(S.userBday)bd.push(`${getContext()?.name1}:${S.userBday}`);if(S.botBday)bd.push(`${getContext()?.name2}:${S.botBday}`);for(const[n,npc]of Object.entries(s.npcs))if(npc.bd)bd.push(`${n}:${npc.bd}`);if(bd.length)L.push(`[ДР:${bd.join(';')}]`);
-    const up=s.agenda.filter(a=>!a.done).slice(0,5);if(up.length)L.push(`[Планы:${up.map(a=>(a.d?a.d+' ':'')+ a.t).join(';')}]`);
+    const rn2=(cn)=>cn==='_default'?(getContext()?.name2||'Bot'):cn;
+
+    // ── Время и место ──
+    if(s.time)L.push(`[Время:${s.time} | Место:${s.loc} | Погода:${s.weather}]`);
+
+    // ── Симс — текущие значения ──
+    if(Object.keys(s.sims).length){
+        L.push('[ТЕКУЩИЕ СТАТЫ — используй как базу, применяй только decay/изменения от событий:');
+        for(const[cn,st]of Object.entries(s.sims)){const n=rn2(cn);L.push(`  ${n}: голод=${st.hunger} гигиена=${st.hygiene} сон=${st.sleep} возбуждение=${st.arousal}`);}
+        L.push(']');
+    }
+
+    // ── Здоровье ──
+    const healthLines=[];
+    for(const[cn,h]of Object.entries(s.health)){const n=rn2(cn);const p=[];p.push(`HP:${h.hp}`);if(h.intox?.v>0)p.push(`опьянение:${h.intox.v}% (${h.intox.r||''})`);for(const i of h.injuries)if(i.n&&i.n.toLowerCase()!=='нет')p.push(`травма:${i.n}[${i.s}]`);for(const h2 of h.habits)if(h2.n&&h2.n.toLowerCase()!=='нет')p.push(`привычка:${h2.n}`);healthLines.push(`  ${n}: ${p.join(' | ')}`);}
+    if(healthLines.length){L.push('[ЗДОРОВЬЕ:');L.push(...healthLines);L.push(']');}
+
+    // ── Кошельки — КРИТИЧНО: баланс менять только через spend/income ──
+    const walletLines=[];
+    for(const[cn,w]of Object.entries(s.wallets)){const n=rn2(cn);walletLines.push(`  ${n}: ${w.bal.toLocaleString('ru-RU')}${w.cur}`);}
+    if(walletLines.length){L.push('[КОШЕЛЬКИ — баланс актуальный, НЕ изменять произвольно, только через spend/income:');L.push(...walletLines);L.push(']');}
+
+    // ── Наряды ──
+    const cos=Object.entries(s.cos);
+    if(cos.length){L.push('[НАРЯДЫ:');for(const[n,d]of cos)L.push(`  ${n}: ${d}`);L.push(']');}
+
+    // ── Цикл ──
+    if(s.cycle.day!==null){L.push(`[ЦИКЛ: день ${s.cycle.day}, фаза: ${s.cycle.phase}, настроение: ${s.cycle.mood}, физически: ${s.cycle.physical}]`);}
+
+    // ── Аффекшн ──
+    const affLines=[];
+    for(const[n,a]of Object.entries(s.aff))affLines.push(`  ${n}: ${a.v>0?'+':''}${a.v} (${a.r||''})`);
+    if(affLines.length){L.push('[ОТНОШЕНИЯ К {{user}}:');L.push(...affLines);L.push(']');}
+
+    // ── NPC ──
+    const npcNames=Object.keys(s.npcs);
+    if(npcNames.length){L.push(`[ИЗВЕСТНЫЕ ПЕРСОНАЖИ: ${npcNames.map(n=>{const npc=s.npcs[n];const parts=[n];if(npc.rel)parts.push(npc.rel);if(npc.age)parts.push(`${npc.age}л`);return parts.join(' — ');}).join('; ')}]`);}
+
+    // ── ДР ──
+    const bd=[];if(S.userBday)bd.push(`${getContext()?.name1}:${S.userBday}`);if(S.botBday)bd.push(`${getContext()?.name2}:${S.botBday}`);for(const[n,npc]of Object.entries(s.npcs))if(npc.bd)bd.push(`${n}:${npc.bd}`);if(bd.length)L.push(`[ДР: ${bd.join('; ')}]`);
+
+    // ── Планы ──
+    const up=s.agenda.filter(a=>!a.done).slice(0,5);if(up.length)L.push(`[ПЛАНЫ: ${up.map(a=>(a.d?a.d+' ':'')+a.t).join('; ')}]`);
+
     return L.join('\n');
 }
 function onPrompt(ed){if(!S.enabled||!S.injectContext)return;const s=agg();const sys=S.customPrompt||SYS;const ctx=buildCtx(s);if(ed?.chat){ed.chat.unshift({role:'system',content:sys});if(ctx){let idx=ed.chat.length-1;for(let i=ed.chat.length-1;i>=0;i--)if(ed.chat[i].role==='user'){idx=i;break;}ed.chat.splice(idx,0,{role:'system',content:ctx});}}}
@@ -241,18 +280,17 @@ function rChars(){
     const $n=$('#chr-npcs').empty();const ctx=getContext();
     const uName=ctx?.name1||'';const bName=ctx?.name2||'';
     // helper: render a main character card (bot or user)
-    function mkMain(name,isBg,bdVal){
-        const af=LS.aff[name]||Object.entries(LS.aff).find(([k])=>{const kl=k.toLowerCase(),nl=name.toLowerCase();return kl===nl||kl.startsWith(nl)||nl.startsWith(kl);})?.[1];
+    function mkMain(name,isBg,bdVal,showAf){
+        const af=showAf&&(LS.aff[name]||Object.entries(LS.aff).find(([k])=>{const kl=k.toLowerCase(),nl=name.toLowerCase();return kl===nl||kl.startsWith(nl)||nl.startsWith(kl);})?.[1]);
         const pr=LS.chars.some(c=>c.toLowerCase()===name.toLowerCase()||c.toLowerCase().startsWith(name.toLowerCase())||name.toLowerCase().startsWith(c.toLowerCase()));
         let tags=`<span class="chr-tag" style="background:${isBg};color:var(--chr-peach);">${isBg.includes('peach')?'юзер':'бот'}</span>`;
         if(bdVal)tags+=`<span class="chr-tag"><i class="fa-solid fa-cake-candles" style="font-size:9px;"></i> ${esc(bdVal)}</span>`;
         if(af){const cl=af.v>=0?'mint':'rose';tags+=`<span class="chr-tag" style="background:var(--chr-${cl}-bg);color:var(--chr-${cl});"><i class="fa-solid fa-heart" style="font-size:9px;"></i> ${af.v>0?'+':''}${af.v}</span>`;}
         if(pr)tags+=`<span class="chr-tag" style="background:var(--chr-blue-bg);color:var(--chr-blue);">в сцене</span>`;
-        const col=isBg;
-        $n.prepend(`<div class="chr-npc chr-card" style="border-color:rgba(255,255,255,.08);"><div class="chr-npc__av" style="background:${col};color:var(--chr-text);">${name.charAt(0).toUpperCase()}</div><div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:600;color:var(--chr-text);">${esc(name)}</div><div class="chr-npc__tags" style="margin-top:3px;">${tags}</div></div></div>`);
+        $n.prepend(`<div class="chr-npc chr-card" style="border-color:rgba(255,255,255,.08);"><div class="chr-npc__av" style="background:${isBg};color:var(--chr-text);">${name.charAt(0).toUpperCase()}</div><div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:600;color:var(--chr-text);">${esc(name)}</div><div class="chr-npc__tags" style="margin-top:3px;">${tags}</div></div></div>`);
     }
-    if(bName)mkMain(bName,'var(--chr-blue-bg)',S.botBday);
-    if(uName)mkMain(uName,'var(--chr-peach-bg)',S.userBday);
+    if(bName)mkMain(bName,'var(--chr-blue-bg)',S.botBday,true);
+    if(uName)mkMain(uName,'var(--chr-peach-bg)',S.userBday,false);
     // NPC cards
     for(const name of Object.keys(LS.npcs)){const npc=LS.npcs[name];const af=LS.aff[name];const pr=LS.chars.includes(name);let tags='';if(npc.gen)tags+=`<span class="chr-tag">${esc(npc.gen)}</span>`;if(npc.age)tags+=`<span class="chr-tag">${npc.age}</span>`;if(npc.rel)tags+=`<span class="chr-tag" style="background:var(--chr-blue-bg);color:var(--chr-blue);">${esc(npc.rel)}</span>`;if(af){const cl=af.v>=0?'mint':'rose';tags+=`<span class="chr-tag" style="background:var(--chr-${cl}-bg);color:var(--chr-${cl});"><i class="fa-solid fa-heart" style="font-size:9px;"></i> ${af.v>0?'+':''}${af.v}</span>`;}if(pr)tags+=`<span class="chr-tag" style="background:var(--chr-peach-bg);color:var(--chr-peach);">в сцене</span>`;
         const colors=['var(--chr-lilac-bg)','var(--chr-blue-bg)','var(--chr-peach-bg)','var(--chr-rose-bg)','var(--chr-mint-bg)'];const ci=name.length%colors.length;
