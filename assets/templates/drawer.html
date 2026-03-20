@@ -10,7 +10,7 @@
                 <i class="fa-solid fa-book-journal-whills"></i>
                 Chronicle
             </div>
-            <span class="chr-version">v0.1.0</span>
+            <span class="chr-version">v0.2.0</span>
         </div>
 
         <!-- Навигация -->
@@ -146,54 +146,11 @@
 
             <!-- ═══ ЗДОРОВЬЕ ═══ -->
             <div id="chr-tab-health" class="chr-tab-content">
-                <!-- HP -->
-                <div class="chr-section chr-glass-card">
-                    <div class="chr-section-header"><i class="fa-solid fa-heart"></i> Здоровье</div>
-                    <div class="chr-section-body">
-                        <div class="chr-sim-bar">
-                            <i class="chr-sim-bar__icon fa-solid fa-heart" style="color:var(--chr-danger);"></i>
-                            <span class="chr-sim-bar__label">HP</span>
-                            <div class="chr-sim-bar__track">
-                                <div id="chr-hp-fill" class="chr-sim-bar__fill" style="width:100%;background:var(--chr-danger);"></div>
-                            </div>
-                            <span id="chr-hp-value" class="chr-sim-bar__value">100</span>
-                        </div>
-                    </div>
+                <!-- Динамический: JS рендерит HP/опьянение/травмы/привычки для каждого персонажа -->
+                <div id="chr-health-chars">
+                    <div class="chr-empty"><i class="fa-solid fa-heart-pulse"></i>Нет данных о здоровье</div>
                 </div>
-
-                <!-- Опьянение -->
-                <div class="chr-section chr-glass-card">
-                    <div class="chr-section-header"><i class="fa-solid fa-wine-glass"></i> Опьянение</div>
-                    <div class="chr-section-body">
-                        <div class="chr-sim-bar">
-                            <i class="chr-sim-bar__icon fa-solid fa-wine-glass" style="color:var(--chr-accent);"></i>
-                            <span class="chr-sim-bar__label">Алкоголь</span>
-                            <div class="chr-sim-bar__track">
-                                <div id="chr-intox-fill" class="chr-sim-bar__fill" style="width:0%;background:var(--chr-accent);"></div>
-                            </div>
-                            <span id="chr-intox-value" class="chr-sim-bar__value">0</span>
-                        </div>
-                        <div id="chr-intox-reason" style="font-size:10px;color:var(--chr-text-dim);font-style:italic;margin-top:4px;"></div>
-                    </div>
-                </div>
-
-                <!-- Травмы -->
-                <div class="chr-section chr-glass-card">
-                    <div class="chr-section-header"><i class="fa-solid fa-bandage"></i> Травмы</div>
-                    <div class="chr-section-body" id="chr-injuries-list">
-                        <div class="chr-empty"><i class="fa-solid fa-heart-pulse"></i>Травм нет</div>
-                    </div>
-                </div>
-
-                <!-- Привычки -->
-                <div class="chr-section chr-glass-card">
-                    <div class="chr-section-header"><i class="fa-solid fa-smoking"></i> Привычки</div>
-                    <div class="chr-section-body" id="chr-habits-list">
-                        <div class="chr-empty"><i class="fa-solid fa-leaf"></i>Нет привычек</div>
-                    </div>
-                </div>
-
-                <!-- Цикл -->
+                <!-- Цикл (глобальный) -->
                 <div class="chr-section chr-glass-card" id="chr-cycle-display" style="display:none;">
                     <div class="chr-section-header"><i class="fa-solid fa-moon"></i> Цикл</div>
                     <div class="chr-section-body">
@@ -236,16 +193,11 @@
 
             <!-- ═══ ПРЕДМЕТЫ + КОШЕЛЁК ═══ -->
             <div id="chr-tab-items" class="chr-tab-content">
-                <!-- Кошелёк -->
-                <div class="chr-section chr-glass-card">
-                    <div class="chr-wallet-balance">
-                        <div>
-                            <span id="chr-wallet-amount" class="chr-wallet-balance__amount">0</span>
-                            <span id="chr-wallet-currency" class="chr-wallet-balance__currency">₽</span>
-                        </div>
-                        <div class="chr-wallet-balance__label">Баланс</div>
-                    </div>
-                    <div id="chr-wallet-transactions" style="max-height:200px;overflow-y:auto;">
+                <!-- Кошельки — динамический контейнер для всех персонажей -->
+                <div class="chr-section">
+                    <div class="chr-section-header"><i class="fa-solid fa-wallet"></i> Кошельки</div>
+                    <div id="chr-wallets-container">
+                        <div class="chr-empty"><i class="fa-solid fa-wallet"></i>Нет данных</div>
                     </div>
                 </div>
 
@@ -348,6 +300,25 @@
                         <label style="display:flex;align-items:center;gap:8px;font-size:12px;">
                             <input type="checkbox" id="chr-set-calendar" checked> Календарь
                         </label>
+                    </div>
+                </div>
+
+                <!-- Дни рождения -->
+                <div class="chr-section chr-glass-card">
+                    <div class="chr-section-header"><i class="fa-solid fa-cake-candles"></i> Дни рождения</div>
+                    <div class="chr-section-body" style="display:grid;gap:8px;">
+                        <div>
+                            <label style="font-size:11px;color:var(--chr-text-muted);display:block;margin-bottom:3px;">
+                                <i class="fa-solid fa-user"></i> Дата рождения {{user}} (ГГГГ/М/Д)
+                            </label>
+                            <input type="text" id="chr-set-user-bday" placeholder="1998/6/15" style="width:100%;">
+                        </div>
+                        <div>
+                            <label style="font-size:11px;color:var(--chr-text-muted);display:block;margin-bottom:3px;">
+                                <i class="fa-solid fa-robot"></i> Дата рождения {{char}} (ГГГГ/М/Д)
+                            </label>
+                            <input type="text" id="chr-set-bot-bday" placeholder="2000/3/20" style="width:100%;">
+                        </div>
                     </div>
                 </div>
 
