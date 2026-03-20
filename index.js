@@ -94,6 +94,7 @@ CharName.balance:amount₽
 CharName.spend:category|amount₽|what
 CharName.income:amount₽|source
 </wallet>
+Track wallet for {{char}} AND {{user}}. Always write balance for BOTH.
 <npc>Name|внешность=desc|характер=traits|отношение=relation|пол:m/f|возраст:N|birthday:YYYY/M/D</npc>
 <affection>Name=+/-N|reason</affection>
 <agenda>YYYY/M/D|task</agenda>
@@ -238,12 +239,24 @@ function rTl(){const $t=$('#chr-tl').empty();if(LS.events.length)for(const ev of
 function rChars(){
     const $d=$('#chr-diary').empty();if(LS.diary.length)for(const d of LS.diary.slice(-20).reverse())$d.append(`<div class="chr-diary chr-card"><div class="chr-diary__who"><i class="fa-solid fa-feather"></i>${esc(d.who)}</div><div class="chr-diary__text">${esc(d.text)}</div><div class="chr-diary__when">${esc(d.time)}</div></div>`);else $d.append('<div class="chr-empty"><i class="fa-solid fa-book"></i>Записей нет</div>');
     const $n=$('#chr-npcs').empty();const ctx=getContext();
-    if(S.userBday)$n.append(`<div class="chr-card" style="padding:8px 10px;margin-bottom:4px;display:flex;align-items:center;gap:8px;"><i class="fa-solid fa-cake-candles" style="font-size:14px;color:var(--chr-rose);"></i><span style="font-size:12px;color:var(--chr-text);font-weight:600;">${esc(ctx?.name1||'User')}</span><span class="chr-tag">${esc(S.userBday)}</span></div>`);
-    if(S.botBday)$n.append(`<div class="chr-card" style="padding:8px 10px;margin-bottom:4px;display:flex;align-items:center;gap:8px;"><i class="fa-solid fa-cake-candles" style="font-size:14px;color:var(--chr-rose);"></i><span style="font-size:12px;color:var(--chr-text);font-weight:600;">${esc(ctx?.name2||'Bot')}</span><span class="chr-tag">${esc(S.botBday)}</span></div>`);
+    const uName=ctx?.name1||'';const bName=ctx?.name2||'';
+    // helper: render a main character card (bot or user)
+    function mkMain(name,isBg,bdVal){
+        const af=LS.aff[name]||Object.entries(LS.aff).find(([k])=>{const kl=k.toLowerCase(),nl=name.toLowerCase();return kl===nl||kl.startsWith(nl)||nl.startsWith(kl);})?.[1];
+        const pr=LS.chars.some(c=>c.toLowerCase()===name.toLowerCase()||c.toLowerCase().startsWith(name.toLowerCase())||name.toLowerCase().startsWith(c.toLowerCase()));
+        let tags=`<span class="chr-tag" style="background:${isBg};color:var(--chr-peach);">${isBg.includes('peach')?'юзер':'бот'}</span>`;
+        if(bdVal)tags+=`<span class="chr-tag"><i class="fa-solid fa-cake-candles" style="font-size:9px;"></i> ${esc(bdVal)}</span>`;
+        if(af){const cl=af.v>=0?'mint':'rose';tags+=`<span class="chr-tag" style="background:var(--chr-${cl}-bg);color:var(--chr-${cl});"><i class="fa-solid fa-heart" style="font-size:9px;"></i> ${af.v>0?'+':''}${af.v}</span>`;}
+        if(pr)tags+=`<span class="chr-tag" style="background:var(--chr-blue-bg);color:var(--chr-blue);">в сцене</span>`;
+        const col=isBg;
+        $n.prepend(`<div class="chr-npc chr-card" style="border-color:rgba(255,255,255,.08);"><div class="chr-npc__av" style="background:${col};color:var(--chr-text);">${name.charAt(0).toUpperCase()}</div><div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:600;color:var(--chr-text);">${esc(name)}</div><div class="chr-npc__tags" style="margin-top:3px;">${tags}</div></div></div>`);
+    }
+    if(bName)mkMain(bName,'var(--chr-blue-bg)',S.botBday);
+    if(uName)mkMain(uName,'var(--chr-peach-bg)',S.userBday);
+    // NPC cards
     for(const name of Object.keys(LS.npcs)){const npc=LS.npcs[name];const af=LS.aff[name];const pr=LS.chars.includes(name);let tags='';if(npc.gen)tags+=`<span class="chr-tag">${esc(npc.gen)}</span>`;if(npc.age)tags+=`<span class="chr-tag">${npc.age}</span>`;if(npc.rel)tags+=`<span class="chr-tag" style="background:var(--chr-blue-bg);color:var(--chr-blue);">${esc(npc.rel)}</span>`;if(af){const cl=af.v>=0?'mint':'rose';tags+=`<span class="chr-tag" style="background:var(--chr-${cl}-bg);color:var(--chr-${cl});"><i class="fa-solid fa-heart" style="font-size:9px;"></i> ${af.v>0?'+':''}${af.v}</span>`;}if(pr)tags+=`<span class="chr-tag" style="background:var(--chr-peach-bg);color:var(--chr-peach);">в сцене</span>`;
         const colors=['var(--chr-lilac-bg)','var(--chr-blue-bg)','var(--chr-peach-bg)','var(--chr-rose-bg)','var(--chr-mint-bg)'];const ci=name.length%colors.length;
-        $n.append(`<div class="chr-npc chr-card">${npc.bd?`<div class="chr-npc__bd"><i class="fa-solid fa-cake-candles"></i> ${esc(npc.bd)}</div>`:''}<div class="chr-npc__av" style="background:${colors[ci]};color:var(--chr-text);">${name.charAt(0).toUpperCase()}</div><div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:600;color:var(--chr-text);">${esc(name)}</div>${npc.app?`<div style="font-size:10px;color:var(--chr-text-d);">${esc(npc.app)}</div>`:''}<div class="chr-npc__tags" style="margin-top:3px;">${tags}</div></div></div>`);}
-}
+        $n.append(`<div class="chr-npc chr-card">${npc.bd?`<div class="chr-npc__bd"><i class="fa-solid fa-cake-candles"></i> ${esc(npc.bd)}</div>`:''}<div class="chr-npc__av" style="background:${colors[ci]};color:var(--chr-text);">${name.charAt(0).toUpperCase()}</div><div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:600;color:var(--chr-text);">${esc(name)}</div>${npc.app?`<div style="font-size:10px;color:var(--chr-text-d);">${esc(npc.app)}</div>`:''}<div class="chr-npc__tags" style="margin-top:3px;">${tags}</div></div></div>`);}}
 
 function rItems(){
     const $w=$('#chr-wallets').empty();const wn=Object.keys(LS.wallets);
