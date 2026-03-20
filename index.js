@@ -143,16 +143,22 @@ function mkS(){return{time:'',loc:'',weather:'',atmo:'',chars:[],cos:{},events:[
 let LS=mkS(),cY=2025,cM=6;
 function agg(){
     const chat=getContext()?.chat||[],s=mkS(),un=(getContext()?.name1||'').toLowerCase(),bn=(getContext()?.name2||'').toLowerCase();
+    // normalize: find canonical key already in obj that matches by prefix/contains
+    function norm(obj,cn){const cnl=cn.toLowerCase();for(const k of Object.keys(obj)){const kl=k.toLowerCase();if(kl===cnl||kl.startsWith(cnl)||cnl.startsWith(kl))return k;}return cn;}
+    // match name to un or bn by prefix
+    function matchUB(cnl){if(cnl==='_default')return true;if(cnl===un||un.startsWith(cnl)||cnl.startsWith(un))return true;if(cnl===bn||bn.startsWith(cnl)||cnl.startsWith(bn))return true;return false;}
     for(let i=0;i<chat.length;i++){const M=chat[i].chronicle_meta;if(!M)continue;
         if(M.world){if(M.world.time)s.time=M.world.time;if(M.world.location)s.loc=M.world.location;if(M.world.weather)s.weather=M.world.weather;if(M.world.atmosphere)s.atmo=M.world.atmosphere;if(M.world.characters?.length)s.chars=[...M.world.characters];if(M.world.costumes)Object.assign(s.cos,M.world.costumes);}
         if(M.events?.length)for(const ev of M.events)s.events.push({...ev,time:M.world?.time||'',mi:i});
         if(M.thoughts?.length)s.thoughts=M.thoughts.filter(t=>t.name.toLowerCase()!==un&&t.name.toLowerCase()!=='{{user}}');
-        // sims — bot + user only (by name match), allow _default as fallback
-        if(M.sims)for(const[cn,stats]of Object.entries(M.sims)){const cnl=cn.toLowerCase();if(cnl!=='_default'&&cnl!==un&&cnl!==bn)continue;if(!s.sims[cn])s.sims[cn]={hunger:70,hygiene:70,sleep:70,arousal:15};for(const[k,v]of Object.entries(stats))s.sims[cn][k]=v.value;}
-        if(M.health)for(const[cn,h]of Object.entries(M.health)){const cnl=cn.toLowerCase();if(cnl!=='_default'&&cnl!==un&&cnl!==bn)continue;if(!s.health[cn])s.health[cn]={hp:100,intox:{v:0,r:''},injuries:[],habits:[]};const sh=s.health[cn];if(h.hp!==null)sh.hp=h.hp;if(h.intox)sh.intox=h.intox;for(const inj of h.injuries){const ex=sh.injuries.find(x=>x.n.toLowerCase()===inj.n.toLowerCase());if(ex)ex.s=inj.s;else sh.injuries.push({...inj});}for(const hab of h.habits){const ex=sh.habits.find(x=>x.n.toLowerCase()===hab.n.toLowerCase());if(ex)ex.d=hab.d;else sh.habits.push({...hab});}}
+        // sims — bot+user only, merge name variants
+        if(M.sims)for(const[cn,stats]of Object.entries(M.sims)){const cnl=cn.toLowerCase();if(!matchUB(cnl))continue;const key=norm(s.sims,cn);if(!s.sims[key])s.sims[key]={hunger:70,hygiene:70,sleep:70,arousal:15};for(const[k,v]of Object.entries(stats))s.sims[key][k]=v.value;}
+        // health — bot+user only, merge name variants
+        if(M.health)for(const[cn,h]of Object.entries(M.health)){const cnl=cn.toLowerCase();if(!matchUB(cnl))continue;const key=norm(s.health,cn);if(!s.health[key])s.health[key]={hp:100,intox:{v:0,r:''},injuries:[],habits:[]};const sh=s.health[key];if(h.hp!==null)sh.hp=h.hp;if(h.intox)sh.intox=h.intox;for(const inj of h.injuries){const ex=sh.injuries.find(x=>x.n.toLowerCase()===inj.n.toLowerCase());if(ex)ex.s=inj.s;else sh.injuries.push({...inj});}for(const hab of h.habits){const ex=sh.habits.find(x=>x.n.toLowerCase()===hab.n.toLowerCase());if(ex)ex.d=hab.d;else sh.habits.push({...hab});}}
         if(M.cycle){if(M.cycle.day!==null)s.cycle.day=M.cycle.day;for(const k of['phase','symptoms','fertile','mood','physical','libido'])if(M.cycle[k])s.cycle[k]=M.cycle[k];}
         if(M.diary?.length)for(const d of M.diary){const dl=d.who.toLowerCase();if(dl!==un&&dl!=='{{user}}')s.diary.push({...d,time:M.world?.time||'',mi:i});}
-        if(M.wallet)for(const[cn,w]of Object.entries(M.wallet)){if(!s.wallets[cn])s.wallets[cn]={bal:0,cur:'₽',txs:[]};if(w.bal)s.wallets[cn].bal=w.bal.a;for(const tx of(w.txs||[]))s.wallets[cn].txs.push({...tx,date:M.world?.time||''});}
+        // wallet — merge name variants, bot+user aware
+        if(M.wallet)for(const[cn,w]of Object.entries(M.wallet)){const cnl=cn.toLowerCase();let key;if(cnl===un||un.startsWith(cnl)||cnl.startsWith(un)){key=Object.keys(s.wallets).find(k=>{const kl=k.toLowerCase();return kl===un||un.startsWith(kl)||kl.startsWith(un);})||cn;}else if(cnl===bn||bn.startsWith(cnl)||cnl.startsWith(bn)){key=Object.keys(s.wallets).find(k=>{const kl=k.toLowerCase();return kl===bn||bn.startsWith(kl)||kl.startsWith(bn);})||cn;}else{key=norm(s.wallets,cn);}if(!s.wallets[key])s.wallets[key]={bal:0,cur:'₽',txs:[]};if(w.bal)s.wallets[key].bal=w.bal.a;for(const tx of(w.txs||[]))s.wallets[key].txs.push({...tx,date:M.world?.time||'',cn:key});}
         if(M.npcs)for(const[n,info]of Object.entries(M.npcs)){if(!s.npcs[n])s.npcs[n]={};for(const[k,v]of Object.entries(info))if(v!==undefined&&v!=='')s.npcs[n][k]=v;}
         if(M.affection)for(const[n,d]of Object.entries(M.affection)){if(!s.aff[n])s.aff[n]={v:0,r:''};if(d.t==='a')s.aff[n].v=d.v;else s.aff[n].v+=d.v;if(d.r)s.aff[n].r=d.r;}
         if(M.agendaDel?.length)for(const del of M.agendaDel)s.agenda=s.agenda.filter(a=>!a.t.toLowerCase().includes(del.toLowerCase()));
