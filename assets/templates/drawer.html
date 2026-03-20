@@ -138,60 +138,9 @@
 
             <!-- ═══ СИМС ═══ -->
             <div id="chr-tab-sims" class="chr-tab-content">
-                <div class="chr-section chr-glass-card">
-                    <div class="chr-section-header">
-                        <i class="fa-solid fa-heart-pulse"></i> Состояние персонажа
-                    </div>
-                    <div class="chr-section-body">
-                        <div class="chr-sims-grid">
-                            <div class="chr-sim-bar" data-stat="hunger">
-                                <i class="chr-sim-bar__icon fa-solid fa-utensils"></i>
-                                <span class="chr-sim-bar__label">Голод</span>
-                                <div class="chr-sim-bar__track">
-                                    <div class="chr-sim-bar__fill" style="width:70%;background-color:#f59e0b;"></div>
-                                </div>
-                                <span class="chr-sim-bar__value">70</span>
-                                <span class="chr-sim-bar__reason"></span>
-                            </div>
-                            <div class="chr-sim-bar" data-stat="hygiene">
-                                <i class="chr-sim-bar__icon fa-solid fa-shower"></i>
-                                <span class="chr-sim-bar__label">Гигиена</span>
-                                <div class="chr-sim-bar__track">
-                                    <div class="chr-sim-bar__fill" style="width:70%;background-color:#60a5fa;"></div>
-                                </div>
-                                <span class="chr-sim-bar__value">70</span>
-                                <span class="chr-sim-bar__reason"></span>
-                            </div>
-                            <div class="chr-sim-bar" data-stat="sleep">
-                                <i class="chr-sim-bar__icon fa-solid fa-bed"></i>
-                                <span class="chr-sim-bar__label">Сон</span>
-                                <div class="chr-sim-bar__track">
-                                    <div class="chr-sim-bar__fill" style="width:70%;background-color:#a78bfa;"></div>
-                                </div>
-                                <span class="chr-sim-bar__value">70</span>
-                                <span class="chr-sim-bar__reason"></span>
-                            </div>
-                            <div class="chr-sim-bar" data-stat="arousal">
-                                <i class="chr-sim-bar__icon fa-solid fa-fire"></i>
-                                <span class="chr-sim-bar__label">Возбуждение</span>
-                                <div class="chr-sim-bar__track">
-                                    <div class="chr-sim-bar__fill" style="width:15%;background-color:#ec4899;"></div>
-                                </div>
-                                <span class="chr-sim-bar__value">15</span>
-                                <span class="chr-sim-bar__reason"></span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Пороговые эффекты -->
-                <div class="chr-section chr-glass-card">
-                    <div class="chr-section-header">
-                        <i class="fa-solid fa-triangle-exclamation"></i> Активные эффекты
-                    </div>
-                    <div class="chr-section-body" id="chr-sims-effects">
-                        <div class="chr-empty"><i class="fa-solid fa-check-circle"></i>Всё в норме</div>
-                    </div>
+                <!-- Динамический контейнер: JS рендерит карточки для каждого персонажа -->
+                <div id="chr-sims-chars">
+                    <div class="chr-empty"><i class="fa-solid fa-heart-pulse"></i>Нет данных</div>
                 </div>
             </div>
 
@@ -224,6 +173,7 @@
                             </div>
                             <span id="chr-intox-value" class="chr-sim-bar__value">0</span>
                         </div>
+                        <div id="chr-intox-reason" style="font-size:10px;color:var(--chr-text-dim);font-style:italic;margin-top:4px;"></div>
                     </div>
                 </div>
 
