@@ -110,7 +110,7 @@
 .chr-map{position:relative;width:100%;min-height:250px;border-radius:var(--chr-r);overflow:hidden;}
 .chr-map svg{width:100%;height:100%;}
 .chr-map-node{cursor:grab;}.chr-map-node:active{cursor:grabbing;}
-.chr-map-node rect{fill:rgba(255,255,255,.04);stroke:var(--chr-border);stroke-width:1;rx:8;}
+.chr-map-node rect{fill:rgba(255,255,255,.04);stroke:var(--chr-border);stroke-width:1;}
 .chr-map-node:hover rect{stroke:rgba(150,185,210,.2);}
 .chr-map-node.current rect{stroke:rgba(150,185,210,.35);stroke-width:1.5;}
 .chr-map-node text{fill:var(--chr-text);font-family:var(--chr-ff);font-size:10px;font-weight:600;text-anchor:middle;dominant-baseline:central;pointer-events:none;}
