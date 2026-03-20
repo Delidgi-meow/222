@@ -55,7 +55,7 @@ Write for EVERY character present. Use real names.
 <thoughts>
 CharName|emotion|What this character is thinking/feeling right now. Inner monologue, 2-3 sentences. Include physical sensations, desires, fears, plans.
 </thoughts>
-Write <thoughts> for EVERY character present. This replaces emotions display.
+Write <thoughts> for {{char}} and NPCs present. Do NOT write thoughts for {{user}} — their inner world is private.
 
 OPTIONAL (only on change):
 <health>
@@ -198,11 +198,11 @@ function onMsg(idx){if(!settings.enabled)return;const chat=getContext()?.chat;if
 function onChat(){if(!settings.enabled)return;const chat=getContext()?.chat||[];for(let i=0;i<chat.length;i++)if(!chat[i].chronicle_meta&&chat[i].mes&&hasCD(chat[i].mes)){const p=parseMessage(chat[i].mes);if(p)chat[i].chronicle_meta=p;}lastState=aggregateState();refreshAll();}
 
 // ══ UI ══
-const SC={hunger:{name:'Голод',icon:'fa-utensils',color:'#f59e0b'},hygiene:{name:'Гигиена',icon:'fa-shower',color:'#60a5fa'},sleep:{name:'Сон',icon:'fa-bed',color:'#a78bfa'},arousal:{name:'Возбуждение',icon:'fa-fire',color:'#ec4899'}};
+const SC={hunger:{name:'Голод',icon:'fa-utensils',color:'#e8d4a0'},hygiene:{name:'Гигиена',icon:'fa-shower',color:'#a0b8d4'},sleep:{name:'Сон',icon:'fa-bed',color:'#c4b0d8'},arousal:{name:'Возбуждение',icon:'fa-fire',color:'#d4a0b8'}};
 const MO=['','Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
 function esc(s){const d=document.createElement('div');d.textContent=s;return d.innerHTML;}
 function rn(cn){return cn==='_default'?(getContext()?.name2||'Персонаж'):cn;}
-function statColor(val,baseColor){return val<20?'#f87171':val<40?'#fbbf24':baseColor;}
+function statColor(val,baseColor){return val<20?'#d4a0a0':val<40?'#e8d4a0':baseColor;}
 
 function refreshAll(){rStatus();rSims();rHealth();rTimeline();rChars();rItems();rCal();rMap();}
 
@@ -211,7 +211,10 @@ function rStatus(){
     $('#chr-current-location').text(lastState.location||'Не задано');$('#chr-current-atmosphere').text(lastState.atmosphere||'');
     // Thoughts
     const $t=$('#chr-thoughts-list').empty();
-    if(lastState.thoughts.length){for(const th of lastState.thoughts){$t.append(`<div class="chr-thought-card chr-glass-card"><div class="chr-thought-card__name">${esc(th.name)}</div>${th.emotion?`<div class="chr-thought-card__emotion"><i class="fa-solid fa-face-meh"></i> ${esc(th.emotion)}</div>`:''}<div class="chr-thought-card__text">${esc(th.text)}</div></div>`);}}
+    // Фильтруем мысли юзера — показываем только бота и NPC
+    const userName=(getContext()?.name1||'').toLowerCase();
+    const botThoughts=lastState.thoughts.filter(th=>th.name.toLowerCase()!==userName&&th.name.toLowerCase()!=='{{user}}');
+    if(botThoughts.length){for(const th of botThoughts){$t.append(`<div class="chr-thought-card chr-glass-card"><div class="chr-thought-card__name">${esc(th.name)}</div>${th.emotion?`<div class="chr-thought-card__emotion"><i class="fa-solid fa-face-meh"></i> ${esc(th.emotion)}</div>`:''}<div class="chr-thought-card__text">${esc(th.text)}</div></div>`);}}
     else $t.append('<div class="chr-empty"><i class="fa-solid fa-brain"></i>AI ещё не описал мысли</div>');
     // Costumes
     const $c=$('#chr-costumes-quick').empty();const ce=Object.entries(lastState.costumes);
