@@ -335,9 +335,10 @@ function rMap(){
         }
 
         let drag=false,ox,oy;
-        g.addEventListener('pointerdown',ev=>{drag=true;ox=ev.clientX-node.x;oy=ev.clientY-node.y;g.setPointerCapture(ev.pointerId);});
-        g.addEventListener('pointermove',ev=>{if(!drag)return;node.x=Math.max(0,(ev.clientX-ox));node.y=Math.max(0,(ev.clientY-oy));rMap();});
-        g.addEventListener('pointerup',()=>{drag=false;});
+        function clientToSVG(ev){const ctm=svg.getScreenCTM();return{x:(ev.clientX-ctm.e)/ctm.a,y:(ev.clientY-ctm.f)/ctm.d};}
+        g.addEventListener('pointerdown',ev=>{if(ev.button!==0)return;drag=true;const p=clientToSVG(ev);ox=p.x-node.x;oy=p.y-node.y;g.setPointerCapture(ev.pointerId);ev.stopPropagation();});
+        g.addEventListener('pointermove',ev=>{if(!drag)return;const p=clientToSVG(ev);node.x=Math.max(0,p.x-ox);node.y=Math.max(0,p.y-oy);g.setAttribute('transform',`translate(${node.x},${node.y})`);});
+        g.addEventListener('pointerup',()=>{if(drag){drag=false;rMap();}});
         svg.appendChild(g);
     }
     svg.appendChild(tip);
