@@ -390,11 +390,28 @@ function rChars(){
     }
     if(bName)mkMain(bName,'var(--chr-blue-bg)',S.botBday,true);
     if(uName)mkMain(uName,'var(--chr-peach-bg)',S.userBday,false);
+    // Fuzzy name match helper
+    function nameMatch(a,b){const al=a.toLowerCase(),bl=b.toLowerCase();return al===bl||al.startsWith(bl)||bl.startsWith(al);}
     // NPC cards
-    for(const name of Object.keys(LS.npcs)){const npc=LS.npcs[name];const af=LS.aff[name];const pr=LS.chars.includes(name);let tags='';if(npc.gen)tags+=`<span class="chr-tag">${esc(npc.gen)}</span>`;if(npc.age)tags+=`<span class="chr-tag">${npc.age}</span>`;if(npc.rel)tags+=`<span class="chr-tag" style="background:var(--chr-blue-bg);color:var(--chr-blue);">${esc(npc.rel)}</span>`;if(af){const cl=af.v>=0?'mint':'rose';tags+=`<span class="chr-tag" style="background:var(--chr-${cl}-bg);color:var(--chr-${cl});"><i class="fa-solid fa-heart" style="font-size:9px;"></i> ${af.v>0?'+':''}${af.v}</span>`;}if(pr)tags+=`<span class="chr-tag" style="background:var(--chr-peach-bg);color:var(--chr-peach);">в сцене</span>`;
+    for(const name of Object.keys(LS.npcs)){const npc=LS.npcs[name];const af=LS.aff[name];const pr=LS.chars.some(c=>nameMatch(c,name));let tags='';if(npc.gen)tags+=`<span class="chr-tag">${esc(npc.gen)}</span>`;if(npc.age)tags+=`<span class="chr-tag">${npc.age}</span>`;if(npc.rel)tags+=`<span class="chr-tag" style="background:var(--chr-blue-bg);color:var(--chr-blue);">${esc(npc.rel)}</span>`;if(af){const cl=af.v>=0?'mint':'rose';tags+=`<span class="chr-tag" style="background:var(--chr-${cl}-bg);color:var(--chr-${cl});"><i class="fa-solid fa-heart" style="font-size:9px;"></i> ${af.v>0?'+':''}${af.v}</span>`;}if(pr)tags+=`<span class="chr-tag" style="background:var(--chr-mint-bg);color:var(--chr-mint);">в сцене</span>`;
         const colors=['var(--chr-lilac-bg)','var(--chr-blue-bg)','var(--chr-peach-bg)','var(--chr-rose-bg)','var(--chr-mint-bg)'];const ci=name.length%colors.length;
-        $n.append(`<div class="chr-npc chr-card">${npc.bd?`<div class="chr-npc__bd"><i class="fa-solid fa-cake-candles"></i> ${esc(npc.bd)} ${zodiac(npc.bd)}</div>`:''}<div class="chr-npc__av" style="background:${colors[ci]};color:var(--chr-text);">${name.charAt(0).toUpperCase()}</div><div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:600;color:var(--chr-text);">${esc(name)}</div>${npc.app?`<div style="font-size:10px;color:var(--chr-text-d);">${esc(npc.app)}</div>`:''}<div class="chr-npc__tags" style="margin-top:3px;">${tags}</div></div></div>`);}}
-
+        $n.append(`<div class="chr-npc chr-card">${npc.bd?`<div class="chr-npc__bd"><i class="fa-solid fa-cake-candles"></i> ${esc(npc.bd)} ${zodiac(npc.bd)}</div>`:''}<div class="chr-npc__av" style="background:${colors[ci]};color:var(--chr-text);">${name.charAt(0).toUpperCase()}</div><div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:600;color:var(--chr-text);">${esc(name)}</div>${npc.app?`<div style="font-size:10px;color:var(--chr-text-d);">${esc(npc.app)}</div>`:''}<div class="chr-npc__tags" style="margin-top:3px;">${tags}</div></div></div>`);}
+    // Show chars in scene that have no <npc> card yet
+    const npcNamesLower=Object.keys(LS.npcs).map(n=>n.toLowerCase());
+    for(const name of LS.chars){
+        const nl=name.toLowerCase();
+        // Skip if it's user or bot (fuzzy)
+        if(nameMatch(nl,uName.toLowerCase())||nameMatch(nl,bName.toLowerCase()))continue;
+        // Skip if already shown as NPC card (fuzzy)
+        if(npcNamesLower.some(k=>nameMatch(nl,k)))continue;
+        // Show as basic "in scene" card
+        const colors2=['var(--chr-lilac-bg)','var(--chr-blue-bg)','var(--chr-peach-bg)','var(--chr-rose-bg)','var(--chr-mint-bg)'];
+        const ci2=name.length%colors2.length;const af=LS.aff[name];
+        let tags2='<span class="chr-tag" style="background:var(--chr-mint-bg);color:var(--chr-mint);">в сцене</span>';
+        if(af){const cl=af.v>=0?'mint':'rose';tags2+=`<span class="chr-tag" style="background:var(--chr-${cl}-bg);color:var(--chr-${cl});"><i class="fa-solid fa-heart" style="font-size:9px;"></i> ${af.v>0?'+':''}${af.v}</span>`;}
+        $n.append(`<div class="chr-npc chr-card"><div class="chr-npc__av" style="background:${colors2[ci2]};color:var(--chr-text);">${name.charAt(0).toUpperCase()}</div><div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:600;color:var(--chr-text);">${esc(name)}</div><div class="chr-npc__tags" style="margin-top:3px;">${tags2}</div></div></div>`);
+    }
+}
 function rItems(){
     const $w=$('#chr-wallets').empty();const wn=Object.keys(LS.wallets);
     if(wn.length)for(const cn of wn){const w=LS.wallets[cn];let tx='';for(const t of w.txs.slice(-5).reverse()){const sp=t.t==='spend';tx+=`<div class="chr-tx"><div class="chr-tx__icon" style="background:${sp?'var(--chr-rose-bg)':'var(--chr-mint-bg)'};color:${sp?'var(--chr-rose)':'var(--chr-mint)'};">${sp?'<i class="fa-solid fa-arrow-down"></i>':'<i class="fa-solid fa-arrow-up"></i>'}</div><div class="chr-tx__info"><div class="chr-tx__cat">${esc(t.cat)}</div><div class="chr-tx__note">${esc(t.note)}</div></div><div class="chr-tx__amt" style="color:${sp?'var(--chr-rose)':'var(--chr-mint)'};">${sp?'-':'+'}${t.a}${t.cur||'₽'}</div></div>`;}
