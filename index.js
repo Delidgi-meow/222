@@ -544,6 +544,39 @@ function initBtns(){
     $(document).on('click','#chr-cal-n',()=>{cM++;if(cM>12){cM=1;cY++;}rCal();});
     $(document).on('click','#chr-ag-add',()=>{const t=prompt('Задача:');if(!t)return;const d=prompt('Дата (ГГГГ/М/Д):')||'';LS.agenda.push({d,t,done:false});rCal();});
     $(document).on('click','#chr-map-add',()=>{const n=prompt('Название (Дом·Кухня):');if(!n)return;const id=n.toLowerCase().replace(/[·\s>/\\]/g,'_').replace(/[^a-zа-яё0-9_]/gi,'');if(!LS.mapN[id])LS.mapN[id]={name:n,desc:'',x:40+Object.keys(LS.mapN).length%4*120,y:30};rMap();});
+    // Fetch models from Extra API
+    $(document).on('click','#s-api-fetch',async()=>{
+        const url=$('#s-api-url').val().trim();const key=$('#s-api-key').val().trim();
+        if(!url){$('#s-api-fetch-status').text('Введите API URL').css('color','var(--chr-rose)');return;}
+        const $btn=$('#s-api-fetch'),$status=$('#s-api-fetch-status'),$list=$('#s-api-models-list');
+        $btn.prop('disabled',true).find('i').removeClass('fa-magnifying-glass').addClass('fa-spinner fa-spin');
+        $status.text('Загрузка...').css('color','var(--chr-text-d)');
+        try{
+            const modelsUrl=url.replace(/\/+$/,'')+'/models';
+            const headers={'Content-Type':'application/json'};
+            if(key)headers['Authorization']=`Bearer ${key}`;
+            const resp=await fetch(modelsUrl,{headers});
+            if(!resp.ok)throw new Error(`${resp.status} ${resp.statusText}`);
+            const data=await resp.json();
+            const models=(data.data||data.models||data||[]).filter(m=>m.id||m.name).map(m=>m.id||m.name).sort((a,b)=>a.localeCompare(b));
+            if(!models.length){$status.text('Моделей не найдено').css('color','var(--chr-rose)');$list.hide();return;}
+            $list.empty().append('<option value="">— выберите модель —</option>');
+            for(const m of models)$list.append(`<option value="${m}">${m}</option>`);
+            const current=$('#s-api-model').val().trim();
+            if(current&&models.includes(current))$list.val(current);
+            $list.show();
+            $status.text(`Найдено ${models.length} моделей`).css('color','var(--chr-mint)');
+        }catch(err){
+            $status.text(`Ошибка: ${err.message}`).css('color','var(--chr-rose)');$list.hide();
+        }finally{
+            $btn.prop('disabled',false).find('i').removeClass('fa-spinner fa-spin').addClass('fa-magnifying-glass');
+        }
+    });
+    // Select model from dropdown
+    $(document).on('change','#s-api-models-list',function(){
+        const val=$(this).val();
+        if(val){$('#s-api-model').val(val).trigger('change');}
+    });
 }
 async function getTpl(n){try{return await renderExtensionTemplateAsync(TP,n);}catch(e){return '';}}
 

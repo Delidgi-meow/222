@@ -81,7 +81,16 @@
                     <div style="display:grid;gap:6px;padding:0 4px;">
                         <div><label style="font-size:11px;color:var(--chr-text-d);display:block;margin-bottom:2px;">API URL (OpenAI-совместимый)</label><input type="text" id="s-api-url" placeholder="https://api.openai.com/v1" style="width:100%;"></div>
                         <div><label style="font-size:11px;color:var(--chr-text-d);display:block;margin-bottom:2px;">API Key</label><input type="password" id="s-api-key" placeholder="sk-..." style="width:100%;"></div>
-                        <div><label style="font-size:11px;color:var(--chr-text-d);display:block;margin-bottom:2px;">Модель</label><input type="text" id="s-api-model" placeholder="gpt-4o-mini" style="width:100%;"></div>
+                        <div><label style="font-size:11px;color:var(--chr-text-d);display:block;margin-bottom:2px;">Модель</label>
+                            <div style="display:flex;gap:4px;align-items:center;">
+                                <input type="text" id="s-api-model" placeholder="gpt-4o-mini" style="flex:1;">
+                                <button class="chr-ibtn" id="s-api-fetch" title="Загрузить список моделей"><i class="fa-solid fa-magnifying-glass"></i></button>
+                            </div>
+                            <select id="s-api-models-list" style="width:100%;margin-top:4px;display:none;padding:6px 8px;background:rgba(255,255,255,.04);color:var(--chr-text);border:1px solid var(--chr-border);border-radius:var(--chr-rs);font-size:12px;">
+                                <option value="">— выберите модель —</option>
+                            </select>
+                            <div id="s-api-fetch-status" style="font-size:10px;color:var(--chr-text-d);margin-top:2px;"></div>
+                        </div>
                         <div style="font-size:10px;color:var(--chr-text-d);padding:4px 0;">Если настроен — конспекты и анализ пойдут через этот API, не расходуя контекст основного чата.</div>
                     </div>
                 </div>
