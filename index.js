@@ -5,9 +5,12 @@ import{renderExtensionTemplateAsync,getContext,extension_settings}from'/scripts/
 import{getSlideToggleOptions,saveSettingsDebounced,eventSource,event_types}from'/script.js';
 import{slideToggle}from'/lib.js';
 
-const EN='chronicle',VER='0.4.0';
+const EN='chronicle',VER='0.5.0';
 const _u=import.meta.url,_m=_u.match(/\/scripts\/extensions\/(third-party\/[^/]+)\//);
 const EF=_m?_m[1]:'third-party/chronicle',TP=`${EF}/assets/templates`;
+
+// ── Zodiac helper ──
+function zodiac(dateStr){if(!dateStr)return'';const m=dateStr.match(/(\d{1,2})\D+(\d{1,2})$/);if(!m)return'';const mo=+m[1],d=+m[2];const signs=[['♑','Козерог',120],['♒','Водолей',219],['♓','Рыбы',320],['♈','Овен',420],['♉','Телец',521],['♊','Близнецы',621],['♋','Рак',722],['♌','Лев',823],['♍','Дева',923],['♎','Весы',1023],['♏','Скорпион',1122],['♐','Стрелец',1222],['♑','Козерог',1232]];const v=mo*100+d;for(const[sym,name,end]of signs)if(v<=end)return`${sym} ${name}`;return'♑ Козерог';}
 
 // ── Navbar ──
 let doNav=null;
@@ -16,7 +19,7 @@ function legacyDraw(){const ic=$('#chronicle_drawer_icon'),co=$('#chronicle_draw
 async function initDrawer(){const t=$('#chronicle_drawer .drawer-toggle');if(typeof doNav==='function')t.on('click',doNav);else{$('#chronicle_drawer_content').attr('data-slide-toggle','hidden').css('display','none');t.on('click',legacyDraw);}}
 
 // ── Settings ──
-const DF={enabled:1,autoParse:1,injectContext:1,sendSims:1,sendHealth:1,sendCycle:0,sendWallet:1,sendDiary:1,userBday:'',botBday:'',customPrompt:''};
+const DF={enabled:1,autoParse:1,injectContext:1,sendSims:1,sendHealth:1,sendCycle:0,sendWallet:1,sendDiary:1,sendPregnancy:0,userBday:'',botBday:'',customPrompt:'',extraApiUrl:'',extraApiKey:'',extraApiModel:''};
 let S={};
 function loadS(){S=extension_settings[EN]?{...DF,...extension_settings[EN]}:{...DF};extension_settings[EN]=S;}
 function saveS(){extension_settings[EN]=S;saveSettingsDebounced();}
@@ -26,13 +29,15 @@ function syncUI(){
     const bName=ctx?.name2||'{{char}}';
     $('#s-sims').prop('checked',S.sendSims);$('#s-health').prop('checked',S.sendHealth);$('#s-cycle').prop('checked',S.sendCycle);$('#s-wallet').prop('checked',S.sendWallet);$('#s-diary').prop('checked',S.sendDiary);
     $('#s-ubday').val(S.userBday||'');$('#s-bbday').val(S.botBday||'');$('#s-prompt').val(S.customPrompt||'');
+    $('#s-api-url').val(S.extraApiUrl||'');$('#s-api-key').val(S.extraApiKey||'');$('#s-api-model').val(S.extraApiModel||'');
+    $('#s-pregnancy').prop('checked',S.sendPregnancy);
     $('#s-label-ubday').text(`ДР ${uName} (ГГГГ/М/Д)`);
     $('#s-label-bbday').text(`ДР ${bName} (ГГГГ/М/Д)`);
 }
-function initSE(){const b=(s,k)=>$(document).on('change',s,function(){S[k]=$(this).prop('checked');saveS();});b('#s-sims','sendSims');b('#s-health','sendHealth');b('#s-cycle','sendCycle');b('#s-wallet','sendWallet');b('#s-diary','sendDiary');$(document).on('change','#s-ubday',function(){S.userBday=$(this).val().trim();saveS();});$(document).on('change','#s-bbday',function(){S.botBday=$(this).val().trim();saveS();});$(document).on('change','#s-prompt',function(){S.customPrompt=$(this).val();saveS();});$(document).on('click','#s-reset',()=>{S.customPrompt='';$('#s-prompt').val('');saveS();});}
+function initSE(){const b=(s,k)=>$(document).on('change',s,function(){S[k]=$(this).prop('checked');saveS();});b('#s-sims','sendSims');b('#s-health','sendHealth');b('#s-cycle','sendCycle');b('#s-wallet','sendWallet');b('#s-diary','sendDiary');b('#s-pregnancy','sendPregnancy');$(document).on('change','#s-ubday',function(){S.userBday=$(this).val().trim();saveS();});$(document).on('change','#s-bbday',function(){S.botBday=$(this).val().trim();saveS();});$(document).on('change','#s-prompt',function(){S.customPrompt=$(this).val();saveS();});$(document).on('click','#s-reset',()=>{S.customPrompt='';$('#s-prompt').val('');saveS();});$(document).on('change','#s-api-url',function(){S.extraApiUrl=$(this).val().trim();saveS();});$(document).on('change','#s-api-key',function(){S.extraApiKey=$(this).val().trim();saveS();});$(document).on('change','#s-api-model',function(){S.extraApiModel=$(this).val().trim();saveS();});}
 
 // ── Regex ──
-const RX=[{i:'chr_world',p:'<world>[\\s\\S]*?</world>'},{i:'chr_event',p:'<event>[\\s\\S]*?</event>'},{i:'chr_sims',p:'<sims>[\\s\\S]*?</sims>'},{i:'chr_health',p:'<health>[\\s\\S]*?</health>'},{i:'chr_cycle',p:'<cycle>[\\s\\S]*?</cycle>'},{i:'chr_diary',p:'<diary>[\\s\\S]*?</diary>'},{i:'chr_wallet',p:'<wallet>[\\s\\S]*?</wallet>'},{i:'chr_npc',p:'<npc>[\\s\\S]*?</npc>'},{i:'chr_agenda',p:'<agenda-?>[\\s\\S]*?</agenda-?>'},{i:'chr_thoughts',p:'<thoughts>[\\s\\S]*?</thoughts>'},{i:'chr_location',p:'<location>[\\s\\S]*?</location>'},{i:'chr_affect',p:'<affection>[\\s\\S]*?</affection>'}];
+const RX=[{i:'chr_world',p:'<world>[\\s\\S]*?</world>'},{i:'chr_event',p:'<event>[\\s\\S]*?</event>'},{i:'chr_sims',p:'<sims>[\\s\\S]*?</sims>'},{i:'chr_health',p:'<health>[\\s\\S]*?</health>'},{i:'chr_cycle',p:'<cycle>[\\s\\S]*?</cycle>'},{i:'chr_diary',p:'<diary>[\\s\\S]*?</diary>'},{i:'chr_wallet',p:'<wallet>[\\s\\S]*?</wallet>'},{i:'chr_npc',p:'<npc>[\\s\\S]*?</npc>'},{i:'chr_agenda',p:'<agenda-?>[\\s\\S]*?</agenda-?>'},{i:'chr_thoughts',p:'<thoughts>[\\s\\S]*?</thoughts>'},{i:'chr_location',p:'<location>[\\s\\S]*?</location>'},{i:'chr_affect',p:'<affection>[\\s\\S]*?</affection>'},{i:'chr_item',p:'<item-?>[\\s\\S]*?</item-?>'},{i:'chr_preg',p:'<pregnancy>[\\s\\S]*?</pregnancy>'}];
 function ensureRx(){try{const s=getContext()?.extensionSettings?.regex;if(!s||!Array.isArray(s))return;const ex=new Set(s.map(r=>r.id));for(const t of RX){if(ex.has(t.i))continue;s.push({id:t.i,scriptName:`Chronicle — ${t.i}`,findRegex:`/${t.p}/gim`,replaceString:'',trimStrings:[],placement:[2],disabled:false,markdownOnly:true,promptOnly:true,runOnEdit:true,substituteRegex:0,minDepth:null,maxDepth:null});}}catch(_){}}
 
 // ══ SYSTEM PROMPT ══
@@ -152,17 +157,36 @@ Track wallet for {{char}} AND {{user}}. Always write balance for BOTH.
 <npc>Name|внешность=desc|характер=traits|отношение=relation|пол:m/f|возраст:N|birthday:YYYY/M/D</npc>
 <affection>Name=+/-N|reason</affection>
 <agenda>YYYY/M/D|task</agenda>
-<agenda->completed task</agenda->`;
+<agenda->completed task</agenda->
+<item>
+ItemName|holder=CharName|desc=short description
+</item>
+Write when character picks up, receives, buys, or finds an item.
+<item->
+ItemName
+</item->
+Write when character loses, drops, consumes, or gives away an item.
+<pregnancy>
+week:N
+trimester:1/2/3
+size:description of belly size
+symptoms:current symptoms
+mood:emotional state
+baby:development milestone
+weight_gain:Nkg
+next_checkup:YYYY/M/D
+</pregnancy>
+Write only if character is pregnant. Update weekly.`;
 
 // ══ PARSING ══
-function hasCD(m){return m?/<(?:world|event|sims|health|cycle|diary|wallet|npc|agenda|thoughts|location|affection)>/i.test(m):false;}
+function hasCD(m){return m?/<(?:world|event|sims|health|cycle|diary|wallet|npc|agenda|thoughts|location|affection|item|pregnancy)>/i.test(m):false;}
 function pl(c){return c.split('\n').map(l=>l.trim()).filter(l=>l&&!l.startsWith('#'));}
 function kv(l){const i=l.indexOf(':');return i>0?{k:l.substring(0,i).trim().toLowerCase(),v:l.substring(i+1).trim()}:null;}
 function sf(r){const d=r.indexOf('.');return d>0?{c:r.substring(0,d).trim(),f:r.substring(d+1).trim().toLowerCase()}:{c:'_default',f:r.toLowerCase()};}
 
 function parse(msg){
     if(!msg)return null;
-    const R={world:null,events:[],sims:{},health:{},cycle:null,diary:[],wallet:{},npcs:{},agenda:[],agendaDel:[],affection:{},thoughts:[],locations:[]};
+    const R={world:null,events:[],sims:{},health:{},cycle:null,diary:[],wallet:{},npcs:{},agenda:[],agendaDel:[],affection:{},thoughts:[],locations:[],items:[],itemsDel:[],pregnancy:null};
     let has=false,m;
     // world
     const wR=/<world>([\s\S]*?)<\/world>/gi;while((m=wR.exec(msg))){const w={time:'',location:'',weather:'',atmosphere:'',characters:[],costumes:{}};for(const l of pl(m[1])){const p=kv(l);if(!p)continue;if(p.k==='time')w.time=p.v;else if(p.k==='location')w.location=p.v;else if(p.k==='weather')w.weather=p.v;else if(p.k==='atmosphere')w.atmosphere=p.v;else if(p.k==='characters')w.characters=p.v.split(/[,，]/).map(c=>c.trim()).filter(Boolean);else if(p.k==='costume'){// handle "Name=outfit" but also multiple chars separated by ";"
@@ -187,6 +211,11 @@ function parse(msg){
     const aR=/<affection>([\s\S]*?)<\/affection>/gi;while((m=aR.exec(msg))){for(const l of pl(m[1])){const eq=l.indexOf('=');if(eq<=0)continue;const name=l.substring(0,eq).trim(),rest=l.substring(eq+1).trim();const pp=rest.indexOf('|');const vs=pp>0?rest.substring(0,pp).trim():rest;const reason=pp>0?rest.substring(pp+1).trim():'';const n=parseFloat(vs);if(!isNaN(n))R.affection[name]={t:vs.startsWith('+')||vs.startsWith('-')?'r':'a',v:n,r:reason};}has=true;}
     // location
     const lR=/<location>([\s\S]*?)<\/location>/gi;while((m=lR.exec(msg))){for(const l of pl(m[1])){const pts=l.split('|').map(x=>x.trim());if(!pts[0])continue;const loc={name:pts[0],desc:'',conn:[],chars:[]};for(let i=1;i<pts.length;i++){const eq=pts[i].indexOf('=');if(eq<=0)continue;const k=pts[i].substring(0,eq).trim().toLowerCase(),v=pts[i].substring(eq+1).trim();if(k==='описание'||k==='desc')loc.desc=v;else if(k==='связь'||k==='связи'||k==='connection')loc.conn=v.split(/[,，]/).map(x=>x.trim()).filter(Boolean);else if(k==='chars'||k==='персонажи')loc.chars=v.split(/[,，]/).map(x=>x.trim()).filter(Boolean);}R.locations.push(loc);}has=true;}
+    // item
+    const iR=/<item>([\s\S]*?)<\/item>/gi;while((m=iR.exec(msg))){for(const l of pl(m[1])){const pts=l.split('|').map(x=>x.trim());if(!pts[0])continue;const item={name:pts[0],holder:'',desc:''};for(let j=1;j<pts.length;j++){const eq=pts[j].indexOf('=');if(eq>0){const k=pts[j].substring(0,eq).trim().toLowerCase(),v=pts[j].substring(eq+1).trim();if(k==='holder'||k==='владелец')item.holder=v;else if(k==='desc'||k==='описание')item.desc=v;}}R.items.push(item);}has=true;}
+    const idR=/<item->([\s\S]*?)<\/item->/gi;while((m=idR.exec(msg))){for(const l of pl(m[1]))if(l.trim())R.itemsDel.push(l.trim());has=true;}
+    // pregnancy
+    const pR=/<pregnancy>([\s\S]*?)<\/pregnancy>/gi;while((m=pR.exec(msg))){const p={week:null,trimester:'',size:'',symptoms:'',mood:'',baby:'',weightGain:'',nextCheckup:''};for(const l of pl(m[1])){const kk=kv(l);if(!kk)continue;if(kk.k==='week'){const n=parseInt(kk.v);if(!isNaN(n))p.week=n;}else if(kk.k==='trimester')p.trimester=kk.v;else if(kk.k==='size')p.size=kk.v;else if(kk.k==='symptoms')p.symptoms=kk.v;else if(kk.k==='mood')p.mood=kk.v;else if(kk.k==='baby')p.baby=kk.v;else if(kk.k==='weight_gain')p.weightGain=kk.v;else if(kk.k==='next_checkup')p.nextCheckup=kk.v;}R.pregnancy=p;has=true;}
     // agenda
     const agR=/<agenda>([\s\S]*?)<\/agenda>/gi;while((m=agR.exec(msg))){for(const l of pl(m[1])){const pp=l.indexOf('|');R.agenda.push(pp>0?{d:l.substring(0,pp).trim(),t:l.substring(pp+1).trim()}:{d:'',t:l});}has=true;}
     const agdR=/<agenda->([\s\S]*?)<\/agenda->/gi;while((m=agdR.exec(msg))){for(const l of pl(m[1]))if(l)R.agendaDel.push(l);has=true;}
@@ -194,44 +223,48 @@ function parse(msg){
 }
 
 // ══ STATE ══
-function mkS(){return{time:'',loc:'',weather:'',atmo:'',chars:[],cos:{},events:[],sims:{},health:{},cycle:{day:null,phase:'',symptoms:'',fertile:'',mood:'',physical:'',libido:''},diary:[],wallets:{},npcs:{},aff:{},agenda:[],thoughts:[],mapN:{},mapE:[]};}
+function mkS(){return{time:'',loc:'',weather:'',atmo:'',chars:[],cos:{},events:[],sims:{},health:{},cycle:{day:null,phase:'',symptoms:'',fertile:'',mood:'',physical:'',libido:''},diary:[],wallets:{},npcs:{},aff:{},agenda:[],thoughts:[],mapN:{},mapE:[],items:{},pregnancy:null};}
 let LS=mkS(),cY=2025,cM=6;
 function agg(){
     const chat=getContext()?.chat||[],s=mkS(),un=(getContext()?.name1||'').toLowerCase(),bn=(getContext()?.name2||'').toLowerCase();
-    // normalize: find canonical key already in obj that matches by prefix/contains
     function norm(obj,cn){const cnl=cn.toLowerCase();for(const k of Object.keys(obj)){const kl=k.toLowerCase();if(kl===cnl||kl.startsWith(cnl)||cnl.startsWith(kl))return k;}return cn;}
-    // match name to un or bn by prefix
     function matchUB(cnl){if(cnl==='_default')return true;if(cnl===un||un.startsWith(cnl)||cnl.startsWith(un))return true;if(cnl===bn||bn.startsWith(cnl)||cnl.startsWith(bn))return true;return false;}
+    const seenTxKeys=new Set(); // dedup wallet transactions
     for(let i=0;i<chat.length;i++){const M=chat[i].chronicle_meta;if(!M)continue;
-        if(M.world){if(M.world.time)s.time=M.world.time;if(M.world.location)s.loc=M.world.location;if(M.world.weather)s.weather=M.world.weather;if(M.world.atmosphere)s.atmo=M.world.atmosphere;if(M.world.characters?.length)s.chars=[...M.world.characters];if(M.world.costumes)Object.assign(s.cos,M.world.costumes);}
+        if(M.world){if(M.world.time)s.time=M.world.time;if(M.world.location)s.loc=M.world.location;if(M.world.weather)s.weather=M.world.weather;if(M.world.atmosphere)s.atmo=M.world.atmosphere;if(M.world.characters?.length)s.chars=[...M.world.characters];
+            // Costumes: REPLACE, not merge — only keep this message's costumes
+            if(M.world.costumes&&Object.keys(M.world.costumes).length)s.cos=Object.assign({},M.world.costumes);}
         if(M.events?.length)for(const ev of M.events)s.events.push({...ev,time:M.world?.time||'',mi:i});
         if(M.thoughts?.length)s.thoughts=M.thoughts.filter(t=>t.name.toLowerCase()!==un&&t.name.toLowerCase()!=='{{user}}');
-        // sims — bot+user only, merge name variants
         if(M.sims)for(const[cn,stats]of Object.entries(M.sims)){const cnl=cn.toLowerCase();if(!matchUB(cnl))continue;const key=norm(s.sims,cn);if(!s.sims[key])s.sims[key]={hunger:70,hygiene:70,sleep:70,arousal:15};for(const[k,v]of Object.entries(stats))s.sims[key][k]=v.value;}
-        // health — bot+user only, merge name variants
         if(M.health)for(const[cn,h]of Object.entries(M.health)){const cnl=cn.toLowerCase();if(!matchUB(cnl))continue;const key=norm(s.health,cn);if(!s.health[key])s.health[key]={hp:100,intox:{v:0,r:''},injuries:[],habits:[]};const sh=s.health[key];if(h.hp!==null)sh.hp=h.hp;if(h.intox)sh.intox=h.intox;for(const inj of h.injuries){const ex=sh.injuries.find(x=>x.n.toLowerCase()===inj.n.toLowerCase());if(ex)ex.s=inj.s;else sh.injuries.push({...inj});}for(const hab of h.habits){const ex=sh.habits.find(x=>x.n.toLowerCase()===hab.n.toLowerCase());if(ex)ex.d=hab.d;else sh.habits.push({...hab});}}
         if(M.cycle){if(M.cycle.day!==null)s.cycle.day=M.cycle.day;for(const k of['phase','symptoms','fertile','mood','physical','libido'])if(M.cycle[k])s.cycle[k]=M.cycle[k];}
         if(M.diary?.length)for(const d of M.diary){const dl=d.who.toLowerCase();if(dl!==un&&dl!=='{{user}}')s.diary.push({...d,time:M.world?.time||'',mi:i});}
-        // wallet — merge name variants, bot+user aware
-        if(M.wallet)for(const[cn,w]of Object.entries(M.wallet)){const cnl=cn.toLowerCase();let key;if(cnl===un||un.startsWith(cnl)||cnl.startsWith(un)){key=Object.keys(s.wallets).find(k=>{const kl=k.toLowerCase();return kl===un||un.startsWith(kl)||kl.startsWith(un);})||cn;}else if(cnl===bn||bn.startsWith(cnl)||cnl.startsWith(bn)){key=Object.keys(s.wallets).find(k=>{const kl=k.toLowerCase();return kl===bn||bn.startsWith(kl)||kl.startsWith(bn);})||cn;}else{key=norm(s.wallets,cn);}if(!s.wallets[key])s.wallets[key]={bal:0,cur:'₽',txs:[]};if(w.bal)s.wallets[key].bal=w.bal.a;for(const tx of(w.txs||[]))s.wallets[key].txs.push({...tx,date:M.world?.time||'',cn:key});}
+        // Wallet — use balance as absolute, dedup transactions by msg index + key
+        if(M.wallet)for(const[cn,w]of Object.entries(M.wallet)){const cnl=cn.toLowerCase();let key;if(cnl===un||un.startsWith(cnl)||cnl.startsWith(un)){key=Object.keys(s.wallets).find(k=>{const kl=k.toLowerCase();return kl===un||un.startsWith(kl)||kl.startsWith(un);})||cn;}else if(cnl===bn||bn.startsWith(cnl)||cnl.startsWith(bn)){key=Object.keys(s.wallets).find(k=>{const kl=k.toLowerCase();return kl===bn||bn.startsWith(kl)||kl.startsWith(bn);})||cn;}else{key=norm(s.wallets,cn);}if(!s.wallets[key])s.wallets[key]={bal:0,cur:'₽',txs:[]};if(w.bal)s.wallets[key].bal=w.bal.a;for(const tx of(w.txs||[])){const txKey=`${i}_${tx.t}_${tx.cat}_${tx.a}`;if(seenTxKeys.has(txKey))continue;seenTxKeys.add(txKey);s.wallets[key].txs.push({...tx,date:M.world?.time||'',cn:key});}}
         if(M.npcs)for(const[n,info]of Object.entries(M.npcs)){if(!s.npcs[n])s.npcs[n]={};for(const[k,v]of Object.entries(info))if(v!==undefined&&v!=='')s.npcs[n][k]=v;}
         if(M.affection)for(const[n,d]of Object.entries(M.affection)){if(!s.aff[n])s.aff[n]={v:0,r:''};if(d.t==='a')s.aff[n].v=d.v;else s.aff[n].v+=d.v;if(d.r)s.aff[n].r=d.r;}
         if(M.agendaDel?.length)for(const del of M.agendaDel)s.agenda=s.agenda.filter(a=>!a.t.toLowerCase().includes(del.toLowerCase()));
         if(M.agenda?.length)for(const a of M.agenda)if(!s.agenda.some(x=>x.t===a.t))s.agenda.push({...a,done:false});
+        // Items — add new, remove deleted
+        if(M.itemsDel?.length)for(const del of M.itemsDel){const dl=del.toLowerCase();delete s.items[dl];for(const k of Object.keys(s.items))if(k.toLowerCase()===dl)delete s.items[k];}
+        if(M.items?.length)for(const item of M.items){s.items[item.name]={holder:item.holder,desc:item.desc};}
+        // Pregnancy
+        if(M.pregnancy)s.pregnancy=M.pregnancy;
         if(M.locations?.length){
-            // Clear chars from ALL existing nodes before applying this message's locations
-            // This ensures characters who moved are removed from old locations
             for(const id of Object.keys(s.mapN))s.mapN[id].chars=[];
             for(const loc of M.locations){
                 const id=loc.name.toLowerCase().replace(/[·\s>/\\]/g,'_').replace(/[^a-zа-яё0-9_]/gi,'');
                 if(!s.mapN[id])s.mapN[id]={name:loc.name,desc:loc.desc||'',chars:[],x:40+Object.keys(s.mapN).length%4*120,y:30+Math.floor(Object.keys(s.mapN).length/4)*70};
                 else{if(loc.desc)s.mapN[id].desc=loc.desc;}
-                // Only set chars if explicitly declared (empty array = no one here)
                 s.mapN[id].chars=loc.chars?.length?[...loc.chars]:[];
                 for(const cn of loc.conn){const cid=cn.toLowerCase().replace(/[·\s>/\\]/g,'_').replace(/[^a-zа-яё0-9_]/gi,'');if(!s.mapN[cid])s.mapN[cid]={name:cn,desc:'',chars:[],x:s.mapN[id].x+130,y:s.mapN[id].y+40};if(!s.mapE.some(e=>(e.a===id&&e.b===cid)||(e.a===cid&&e.b===id)))s.mapE.push({a:id,b:cid});}
             }
         }
     }
+    // Filter costumes to only present characters
+    const charLower=new Set(s.chars.map(c=>c.toLowerCase()));
+    for(const k of Object.keys(s.cos))if(!charLower.has(k.toLowerCase()))delete s.cos[k];
     if(s.time){const mt=s.time.match(/(\d{4})\D+(\d{1,2})/);if(mt){cY=+mt[1];cM=+mt[2];}}
     return s;
 }
@@ -289,7 +322,7 @@ function onPrompt(ed){if(!S.enabled||!S.injectContext)return;const s=agg();const
 
 // ══ EVENTS ══
 function onMsg(idx){if(!S.enabled)return;const chat=getContext()?.chat;if(!chat||idx<0||idx>=chat.length)return;if(!hasCD(chat[idx].mes))return;const p=parse(chat[idx].mes);if(p){chat[idx].chronicle_meta=p;}LS=agg();refreshAll();getContext().saveChat?.();}
-function onChat(){if(!S.enabled)return;const chat=getContext()?.chat||[];for(let i=0;i<chat.length;i++)if(!chat[i].chronicle_meta&&chat[i].mes&&hasCD(chat[i].mes)){const p=parse(chat[i].mes);if(p)chat[i].chronicle_meta=p;}LS=agg();refreshAll();syncUI();}
+function onChat(force){if(!S.enabled)return;const chat=getContext()?.chat||[];for(let i=0;i<chat.length;i++){if((force||!chat[i].chronicle_meta)&&chat[i].mes&&hasCD(chat[i].mes)){const p=parse(chat[i].mes);if(p)chat[i].chronicle_meta=p;}}LS=agg();refreshAll();syncUI();}
 
 // ══ UI ══
 const SC={hunger:{n:'Голод',i:'fa-solid fa-utensils',bg:'var(--chr-peach-bg)',bd:'var(--chr-peach-border)',c:'var(--chr-peach)'},hygiene:{n:'Гигиена',i:'fa-solid fa-shower',bg:'var(--chr-blue-bg)',bd:'var(--chr-blue-border)',c:'var(--chr-blue)'},sleep:{n:'Сон',i:'fa-solid fa-moon',bg:'var(--chr-lilac-bg)',bd:'var(--chr-lilac-border)',c:'var(--chr-lilac)'},arousal:{n:'Возбуждение',i:'fa-solid fa-fire',bg:'var(--chr-rose-bg)',bd:'var(--chr-rose-border)',c:'var(--chr-rose)'}};
@@ -297,7 +330,7 @@ const MO=['','Январь','Февраль','Март','Апрель','Май',
 function esc(s){const d=document.createElement('div');d.textContent=s;return d.innerHTML;}
 function rn(cn){return cn==='_default'?(getContext()?.name2||'Персонаж'):cn;}
 
-function refreshAll(){rStatus();rSims();rHealth();rTl();rChars();rItems();rCal();rMap();}
+function refreshAll(){rStatus();rSims();rHealth();rTl();rChars();rItems();rCal();rMap();rPreg();}
 
 function rStatus(){
     $('#chr-date').text(LS.time||'--/--');$('#chr-weather').text(LS.weather||'');$('#chr-loc').text(LS.loc||'—');$('#chr-atmo').text(LS.atmo||'');
@@ -350,7 +383,7 @@ function rChars(){
         const af=showAf&&(LS.aff[name]||Object.entries(LS.aff).find(([k])=>{const kl=k.toLowerCase(),nl=name.toLowerCase();return kl===nl||kl.startsWith(nl)||nl.startsWith(kl);})?.[1]);
         const pr=LS.chars.some(c=>c.toLowerCase()===name.toLowerCase()||c.toLowerCase().startsWith(name.toLowerCase())||name.toLowerCase().startsWith(c.toLowerCase()));
         let tags=`<span class="chr-tag" style="background:${isBg};color:var(--chr-peach);">${isBg.includes('peach')?'юзер':'бот'}</span>`;
-        if(bdVal)tags+=`<span class="chr-tag"><i class="fa-solid fa-cake-candles" style="font-size:9px;"></i> ${esc(bdVal)}</span>`;
+        if(bdVal)tags+=`<span class="chr-tag"><i class="fa-solid fa-cake-candles" style="font-size:9px;"></i> ${esc(bdVal)} ${zodiac(bdVal)}</span>`;
         if(af){const cl=af.v>=0?'mint':'rose';tags+=`<span class="chr-tag" style="background:var(--chr-${cl}-bg);color:var(--chr-${cl});"><i class="fa-solid fa-heart" style="font-size:9px;"></i> ${af.v>0?'+':''}${af.v}</span>`;}
         if(pr)tags+=`<span class="chr-tag" style="background:var(--chr-blue-bg);color:var(--chr-blue);">в сцене</span>`;
         $n.prepend(`<div class="chr-npc chr-card" style="border-color:rgba(255,255,255,.08);"><div class="chr-npc__av" style="background:${isBg};color:var(--chr-text);">${name.charAt(0).toUpperCase()}</div><div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:600;color:var(--chr-text);">${esc(name)}</div><div class="chr-npc__tags" style="margin-top:3px;">${tags}</div></div></div>`);
@@ -360,13 +393,38 @@ function rChars(){
     // NPC cards
     for(const name of Object.keys(LS.npcs)){const npc=LS.npcs[name];const af=LS.aff[name];const pr=LS.chars.includes(name);let tags='';if(npc.gen)tags+=`<span class="chr-tag">${esc(npc.gen)}</span>`;if(npc.age)tags+=`<span class="chr-tag">${npc.age}</span>`;if(npc.rel)tags+=`<span class="chr-tag" style="background:var(--chr-blue-bg);color:var(--chr-blue);">${esc(npc.rel)}</span>`;if(af){const cl=af.v>=0?'mint':'rose';tags+=`<span class="chr-tag" style="background:var(--chr-${cl}-bg);color:var(--chr-${cl});"><i class="fa-solid fa-heart" style="font-size:9px;"></i> ${af.v>0?'+':''}${af.v}</span>`;}if(pr)tags+=`<span class="chr-tag" style="background:var(--chr-peach-bg);color:var(--chr-peach);">в сцене</span>`;
         const colors=['var(--chr-lilac-bg)','var(--chr-blue-bg)','var(--chr-peach-bg)','var(--chr-rose-bg)','var(--chr-mint-bg)'];const ci=name.length%colors.length;
-        $n.append(`<div class="chr-npc chr-card">${npc.bd?`<div class="chr-npc__bd"><i class="fa-solid fa-cake-candles"></i> ${esc(npc.bd)}</div>`:''}<div class="chr-npc__av" style="background:${colors[ci]};color:var(--chr-text);">${name.charAt(0).toUpperCase()}</div><div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:600;color:var(--chr-text);">${esc(name)}</div>${npc.app?`<div style="font-size:10px;color:var(--chr-text-d);">${esc(npc.app)}</div>`:''}<div class="chr-npc__tags" style="margin-top:3px;">${tags}</div></div></div>`);}}
+        $n.append(`<div class="chr-npc chr-card">${npc.bd?`<div class="chr-npc__bd"><i class="fa-solid fa-cake-candles"></i> ${esc(npc.bd)} ${zodiac(npc.bd)}</div>`:''}<div class="chr-npc__av" style="background:${colors[ci]};color:var(--chr-text);">${name.charAt(0).toUpperCase()}</div><div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:600;color:var(--chr-text);">${esc(name)}</div>${npc.app?`<div style="font-size:10px;color:var(--chr-text-d);">${esc(npc.app)}</div>`:''}<div class="chr-npc__tags" style="margin-top:3px;">${tags}</div></div></div>`);}}
 
 function rItems(){
     const $w=$('#chr-wallets').empty();const wn=Object.keys(LS.wallets);
-    if(wn.length)for(const cn of wn){const w=LS.wallets[cn];let tx='';for(const t of w.txs.slice(-5).reverse()){const sp=t.t==='spend';tx+=`<div class="chr-tx"><div class="chr-tx__icon" style="background:${sp?'var(--chr-rose-bg)':'var(--chr-mint-bg)'};color:${sp?'var(--chr-rose)':'var(--chr-mint)'};">${sp?'↓':'↑'}</div><div class="chr-tx__info"><div class="chr-tx__cat">${esc(t.cat)}</div><div class="chr-tx__note">${esc(t.note)}</div></div><div class="chr-tx__amt" style="color:${sp?'var(--chr-rose)':'var(--chr-mint)'};">${sp?'-':'+'}${t.a}${t.cur||'₽'}</div></div>`;}
+    if(wn.length)for(const cn of wn){const w=LS.wallets[cn];let tx='';for(const t of w.txs.slice(-5).reverse()){const sp=t.t==='spend';tx+=`<div class="chr-tx"><div class="chr-tx__icon" style="background:${sp?'var(--chr-rose-bg)':'var(--chr-mint-bg)'};color:${sp?'var(--chr-rose)':'var(--chr-mint)'};">${sp?'<i class="fa-solid fa-arrow-down"></i>':'<i class="fa-solid fa-arrow-up"></i>'}</div><div class="chr-tx__info"><div class="chr-tx__cat">${esc(t.cat)}</div><div class="chr-tx__note">${esc(t.note)}</div></div><div class="chr-tx__amt" style="color:${sp?'var(--chr-rose)':'var(--chr-mint)'};">${sp?'-':'+'}${t.a}${t.cur||'₽'}</div></div>`;}
         $w.append(`<div class="chr-card" style="padding:10px 12px;margin-bottom:6px;"><div style="text-align:center;margin-bottom:6px;"><div style="font-size:10px;color:var(--chr-text-d);">${esc(rn(cn))}</div><div style="font-family:var(--chr-ff);font-size:22px;font-weight:700;color:var(--chr-text);">${w.bal.toLocaleString('ru-RU')}<span style="font-size:12px;color:var(--chr-text-d);">${w.cur}</span></div></div>${tx}</div>`);}
-    else $w.append('<div class="chr-empty"><i class="fa-solid fa-wallet"></i>Нет</div>');
+    else $w.append('<div class="chr-empty"><i class="fa-solid fa-wallet"></i>Нет данных</div>');
+    // Inventory
+    const $inv=$('#chr-inv').empty();const itemEntries=Object.entries(LS.items);
+    if(itemEntries.length){for(const[name,info]of itemEntries){$inv.append(`<div class="chr-card" style="padding:7px 10px;margin-bottom:3px;display:flex;align-items:center;gap:8px;"><i class="fa-solid fa-cube" style="color:var(--chr-blue);font-size:12px;"></i><div style="flex:1;min-width:0;"><div style="font-size:12px;font-weight:600;color:var(--chr-text);">${esc(name)}</div>${info.desc?`<div style="font-size:10px;color:var(--chr-text-d);">${esc(info.desc)}</div>`:''}</div>${info.holder?`<span class="chr-tag"><i class="fa-solid fa-user" style="font-size:8px;"></i> ${esc(info.holder)}</span>`:''}</div>`);}}
+    else $inv.append('<div class="chr-empty"><i class="fa-solid fa-box-open"></i>Пусто</div>');
+}
+
+// ── Pregnancy display ──
+function rPreg(){
+    const $p=$('#chr-preg'),$e=$('#chr-preg-empty');
+    if(!LS.pregnancy||LS.pregnancy.week===null){$p.hide();$e.show();return;}
+    $p.show();$e.hide();const p=LS.pregnancy;const $c=$('#chr-preg-c').empty();
+    let html=`<div style="display:flex;gap:12px;align-items:flex-start;">`;
+    html+=`<div style="text-align:center;"><div style="font-size:28px;font-weight:700;color:var(--chr-rose);font-family:var(--chr-ff);">${p.week}</div><div style="font-size:9px;color:var(--chr-text-d);text-transform:uppercase;">неделя</div></div>`;
+    html+=`<div style="flex:1;">`;
+    if(p.trimester)html+=`<div style="font-size:12px;font-weight:600;color:var(--chr-text);">${p.trimester} триместр</div>`;
+    const tags=[];
+    if(p.size)tags.push(`<span class="chr-tag" style="background:var(--chr-rose-bg);color:var(--chr-rose);"><i class="fa-solid fa-baby" style="font-size:8px;"></i> ${esc(p.size)}</span>`);
+    if(p.weightGain)tags.push(`<span class="chr-tag" style="background:var(--chr-peach-bg);color:var(--chr-peach);"><i class="fa-solid fa-weight-scale" style="font-size:8px;"></i> +${esc(p.weightGain)}</span>`);
+    if(tags.length)html+=`<div style="display:flex;flex-wrap:wrap;gap:3px;margin-top:4px;">${tags.join('')}</div>`;
+    if(p.baby)html+=`<div style="font-size:11px;color:var(--chr-text-m);margin-top:4px;"><i class="fa-solid fa-baby" style="width:14px;text-align:center;font-size:10px;"></i> ${esc(p.baby)}</div>`;
+    if(p.symptoms)html+=`<div style="font-size:11px;color:var(--chr-text-m);margin-top:2px;"><i class="fa-solid fa-stethoscope" style="width:14px;text-align:center;font-size:10px;"></i> ${esc(p.symptoms)}</div>`;
+    if(p.mood)html+=`<div style="font-size:11px;color:var(--chr-text-m);margin-top:2px;"><i class="fa-solid fa-face-smile" style="width:14px;text-align:center;font-size:10px;"></i> ${esc(p.mood)}</div>`;
+    if(p.nextCheckup)html+=`<div style="font-size:10px;color:var(--chr-text-d);margin-top:4px;"><i class="fa-solid fa-calendar-check" style="width:14px;text-align:center;font-size:9px;"></i> Следующий осмотр: ${esc(p.nextCheckup)}</div>`;
+    html+=`</div></div>`;
+    $c.append(html);
 }
 
 function rCal(){
@@ -481,7 +539,7 @@ function rMap(){
 // ── Tabs/Buttons ──
 function initTabs(){$(document).on('click','.chr-tab',function(){const t=$(this).data('tab');if(!t)return;$('.chr-tab').removeClass('active');$(this).addClass('active');$('.chr-tab-content').removeClass('active');$(`#chr-tab-${t}`).addClass('active');});}
 function initBtns(){
-    $(document).on('click','#chr-btn-refresh',()=>{onChat();if(window.toastr)toastr.success('Обновлено','Chronicle');});
+    $(document).on('click','#chr-btn-refresh',()=>{onChat(true);if(window.toastr)toastr.success('Полностью пересканировано','Chronicle');});
     $(document).on('click','#chr-cal-p',()=>{cM--;if(cM<1){cM=12;cY--;}rCal();});
     $(document).on('click','#chr-cal-n',()=>{cM++;if(cM>12){cM=1;cY++;}rCal();});
     $(document).on('click','#chr-ag-add',()=>{const t=prompt('Задача:');if(!t)return;const d=prompt('Дата (ГГГГ/М/Д):')||'';LS.agenda.push({d,t,done:false});rCal();});

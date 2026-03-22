@@ -6,7 +6,7 @@
     "js": "index.js",
     "css": "assets/styles/style.css",
     "author": "kissa",
-    "version": "0.4.0",
+    "version": "0.5.0",
     "homePage": "",
     "auto_update": false
 }

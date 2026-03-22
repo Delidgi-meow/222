@@ -1,7 +1,7 @@
 <div id="chronicle_drawer" class="drawer">
     <div class="drawer-toggle"><div id="chronicle_drawer_icon" class="drawer-icon fa-solid fa-book-journal-whills fa-fw closedIcon interactable" title="Chronicle" tabindex="0"></div></div>
     <div id="chronicle_drawer_content" class="drawer-content closedDrawer">
-        <div class="drawer-header"><div class="chr-title"><i class="fa-solid fa-book-journal-whills"></i>Chronicle</div><span class="chr-version">v0.4</span></div>
+        <div class="drawer-header"><div class="chr-title"><i class="fa-solid fa-book-journal-whills"></i>Chronicle</div><span class="chr-version">v0.5</span></div>
         <div class="chr-tabs">
             <button class="chr-tab active" data-tab="status"><i class="fa-solid fa-gauge"></i><span>Обзор</span></button>
             <button class="chr-tab" data-tab="sims"><i class="fa-solid fa-heart-pulse"></i><span>Симс</span></button>
@@ -11,6 +11,7 @@
             <button class="chr-tab" data-tab="items"><i class="fa-solid fa-box-open"></i><span>Предметы</span></button>
             <button class="chr-tab" data-tab="map"><i class="fa-solid fa-map"></i><span>Карта</span></button>
             <button class="chr-tab" data-tab="cal"><i class="fa-solid fa-calendar-days"></i><span>Календарь</span></button>
+            <button class="chr-tab" data-tab="preg"><i class="fa-solid fa-baby"></i><span>Беременность</span></button>
             <button class="chr-tab" data-tab="set"><i class="fa-solid fa-gear"></i><span>Настройки</span></button>
         </div>
         <div class="chr-tab-contents">
@@ -47,6 +48,14 @@
                 </div>
                 <div class="chr-section" style="margin-top:10px;"><div class="chr-section-header"><i class="fa-solid fa-list-check"></i>Задачи<button class="chr-ibtn" id="chr-ag-add" style="margin-left:auto;"><i class="fa-solid fa-plus"></i></button></div><div id="chr-agenda"></div></div>
             </div>
+            <!-- БЕРЕМЕННОСТЬ -->
+            <div id="chr-tab-preg" class="chr-tab-content">
+                <div class="chr-card" id="chr-preg" style="display:none;padding:12px;">
+                    <div class="chr-section-header"><i class="fa-solid fa-baby"></i>Беременность</div>
+                    <div id="chr-preg-c"></div>
+                </div>
+                <div id="chr-preg-empty" class="chr-empty"><i class="fa-solid fa-baby"></i>Нет данных о беременности.<br>AI добавит тег &lt;pregnancy&gt; когда это произойдёт в сюжете.</div>
+            </div>
             <!-- НАСТРОЙКИ -->
             <div id="chr-tab-set" class="chr-tab-content">
                 <div class="chr-card" style="padding:10px 12px;margin-bottom:8px;">
@@ -57,13 +66,23 @@
                         <label style="display:flex;align-items:center;gap:7px;font-size:12px;"><input type="checkbox" id="s-cycle">Цикл</label>
                         <label style="display:flex;align-items:center;gap:7px;font-size:12px;"><input type="checkbox" id="s-wallet" checked>Кошелёк</label>
                         <label style="display:flex;align-items:center;gap:7px;font-size:12px;"><input type="checkbox" id="s-diary" checked>Дневник</label>
+                        <label style="display:flex;align-items:center;gap:7px;font-size:12px;"><input type="checkbox" id="s-pregnancy">Беременность</label>
                     </div>
                 </div>
                 <div class="chr-card" style="padding:10px 12px;margin-bottom:8px;">
                     <div class="chr-section-header"><i class="fa-solid fa-cake-candles"></i>Дни рождения</div>
                     <div style="display:grid;gap:6px;padding:0 4px;">
-                        <div><label style="font-size:11px;color:var(--chr-text-d);display:block;margin-bottom:2px;">ДР {{user}} (ГГГГ/М/Д)</label><input type="text" id="s-ubday" placeholder="1998/6/15" style="width:100%;"></div>
-                        <div><label style="font-size:11px;color:var(--chr-text-d);display:block;margin-bottom:2px;">ДР {{char}} (ГГГГ/М/Д)</label><input type="text" id="s-bbday" placeholder="2000/3/20" style="width:100%;"></div>
+                        <div><label id="s-label-ubday" style="font-size:11px;color:var(--chr-text-d);display:block;margin-bottom:2px;">ДР {{user}} (ГГГГ/М/Д)</label><input type="text" id="s-ubday" placeholder="1998/6/15" style="width:100%;"></div>
+                        <div><label id="s-label-bbday" style="font-size:11px;color:var(--chr-text-d);display:block;margin-bottom:2px;">ДР {{char}} (ГГГГ/М/Д)</label><input type="text" id="s-bbday" placeholder="2000/3/20" style="width:100%;"></div>
+                    </div>
+                </div>
+                <div class="chr-card" style="padding:10px 12px;margin-bottom:8px;">
+                    <div class="chr-section-header"><i class="fa-solid fa-server"></i>Extra API (экономия контекста)</div>
+                    <div style="display:grid;gap:6px;padding:0 4px;">
+                        <div><label style="font-size:11px;color:var(--chr-text-d);display:block;margin-bottom:2px;">API URL (OpenAI-совместимый)</label><input type="text" id="s-api-url" placeholder="https://api.openai.com/v1" style="width:100%;"></div>
+                        <div><label style="font-size:11px;color:var(--chr-text-d);display:block;margin-bottom:2px;">API Key</label><input type="password" id="s-api-key" placeholder="sk-..." style="width:100%;"></div>
+                        <div><label style="font-size:11px;color:var(--chr-text-d);display:block;margin-bottom:2px;">Модель</label><input type="text" id="s-api-model" placeholder="gpt-4o-mini" style="width:100%;"></div>
+                        <div style="font-size:10px;color:var(--chr-text-d);padding:4px 0;">Если настроен — конспекты и анализ пойдут через этот API, не расходуя контекст основного чата.</div>
                     </div>
                 </div>
                 <div class="chr-card" style="padding:10px 12px;">
