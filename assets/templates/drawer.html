@@ -1,104 +1,62 @@
 <div id="chronicle_drawer" class="drawer">
     <div class="drawer-toggle"><div id="chronicle_drawer_icon" class="drawer-icon fa-solid fa-book-journal-whills fa-fw closedIcon interactable" title="Chronicle" tabindex="0"></div></div>
     <div id="chronicle_drawer_content" class="drawer-content closedDrawer">
-        <div class="drawer-header"><div class="chr-title"><i class="fa-solid fa-book-journal-whills"></i>Chronicle</div><span class="chr-version">v0.5</span></div>
+        <div class="drawer-header"><div class="chr-title"><span class="ci ci-lg ci-book"></span>Chronicle</div><span class="chr-version">v0.6</span><div class="lg-refract"></div></div>
         <div class="chr-tabs">
-            <button class="chr-tab active" data-tab="status"><i class="fa-solid fa-gauge"></i><span>Обзор</span></button>
-            <button class="chr-tab" data-tab="sims"><i class="fa-solid fa-heart-pulse"></i><span>Симс</span></button>
-            <button class="chr-tab" data-tab="health"><i class="fa-solid fa-kit-medical"></i><span>Здоровье</span></button>
-            <button class="chr-tab" data-tab="timeline"><i class="fa-solid fa-timeline"></i><span>События</span></button>
-            <button class="chr-tab" data-tab="chars"><i class="fa-solid fa-users"></i><span>Персонажи</span></button>
-            <button class="chr-tab" data-tab="items"><i class="fa-solid fa-box-open"></i><span>Предметы</span></button>
-            <button class="chr-tab" data-tab="map"><i class="fa-solid fa-map"></i><span>Карта</span></button>
-            <button class="chr-tab" data-tab="cal"><i class="fa-solid fa-calendar-days"></i><span>Календарь</span></button>
-            <button class="chr-tab" data-tab="preg"><i class="fa-solid fa-baby"></i><span>Беременность</span></button>
-            <button class="chr-tab" data-tab="set"><i class="fa-solid fa-gear"></i><span>Настройки</span></button>
+            <button class="chr-tab active" data-tab="status"><span class="ci ci-gauge"></span><span>Обзор</span><div class="lg-refract"></div></button>
+            <button class="chr-tab" data-tab="sims"><span class="ci ci-heart"></span><span>Симс</span><div class="lg-refract"></div></button>
+            <button class="chr-tab" data-tab="health"><span class="ci ci-medkit"></span><span>Здоровье</span><div class="lg-refract"></div></button>
+            <button class="chr-tab" data-tab="timeline"><span class="ci ci-timeline"></span><span>События</span><div class="lg-refract"></div></button>
+            <button class="chr-tab" data-tab="chars"><span class="ci ci-users"></span><span>Персонажи</span><div class="lg-refract"></div></button>
+            <button class="chr-tab" data-tab="items"><span class="ci ci-box"></span><span>Предметы</span><div class="lg-refract"></div></button>
+            <button class="chr-tab" data-tab="map"><span class="ci ci-map"></span><span>Карта</span><div class="lg-refract"></div></button>
+            <button class="chr-tab" data-tab="cal"><span class="ci ci-cal"></span><span>Календарь</span><div class="lg-refract"></div></button>
+            <button class="chr-tab" data-tab="preg"><span class="ci ci-baby"></span><span>Берем.</span><div class="lg-refract"></div></button>
+            <button class="chr-tab" data-tab="set"><span class="ci ci-gear"></span><span>Настройки</span><div class="lg-refract"></div></button>
         </div>
         <div class="chr-tab-contents">
             <!-- ОБЗОР -->
             <div id="chr-tab-status" class="chr-tab-content active">
-                <div class="chr-card" style="padding:12px;margin-bottom:10px;">
+                <div class="chr-card" style="padding:14px;margin-bottom:10px;">
                     <div style="display:flex;justify-content:space-between;align-items:center;">
-                        <div><div id="chr-date" style="font-family:var(--chr-ff);font-size:15px;font-weight:700;color:var(--chr-text);">--/--</div><div id="chr-weather" style="font-size:11px;color:var(--chr-text-d);margin-top:2px;"></div></div>
+                        <div><div id="chr-date" style="font-family:var(--chr-ff);font-size:16px;font-weight:700;color:var(--chr-text);letter-spacing:-.3px;">--/--</div><div id="chr-weather" style="font-size:11px;color:var(--chr-text-d);margin-top:2px;"></div></div>
                         <div style="text-align:right;"><div id="chr-loc" style="font-size:12px;font-weight:600;color:var(--chr-blue);">—</div><div id="chr-atmo" style="font-size:10px;color:var(--chr-text-d);margin-top:2px;"></div></div>
                     </div>
+                    <div class="lg-refract"></div>
                 </div>
-                <div class="chr-section"><div class="chr-section-header"><i class="fa-solid fa-brain"></i>Мысли</div><div id="chr-thoughts"></div></div>
-                <div class="chr-section"><div class="chr-section-header"><i class="fa-solid fa-shirt"></i>Наряды</div><div id="chr-costumes" style="padding:0 12px;"></div></div>
-                <div style="text-align:center;margin-top:8px;"><button id="chr-btn-refresh" class="chr-btn primary"><i class="fa-solid fa-rotate"></i> Обновить</button></div>
+                <div class="chr-section"><div class="chr-section-header"><span class="ci ci-brain"></span>Мысли</div><div id="chr-thoughts"></div></div>
+                <div class="lg-div"></div>
+                <div class="chr-section"><div class="chr-section-header"><span class="ci ci-shirt"></span>Наряды</div><div id="chr-costumes" style="padding:0 12px;"></div></div>
+                <div style="text-align:center;margin-top:10px;"><button id="chr-btn-refresh" class="chr-btn primary"><span class="ci ci-refresh"></span> Обновить<div class="lg-refract"></div></button></div>
             </div>
             <!-- СИМС -->
             <div id="chr-tab-sims" class="chr-tab-content"><div id="chr-sims"></div></div>
             <!-- ЗДОРОВЬЕ -->
-            <div id="chr-tab-health" class="chr-tab-content"><div id="chr-health"></div><div class="chr-card" id="chr-cycle" style="display:none;padding:10px 12px;margin-top:8px;"><div id="chr-cycle-c"></div></div></div>
+            <div id="chr-tab-health" class="chr-tab-content"><div id="chr-health"></div><div class="chr-card" id="chr-cycle" style="display:none;padding:10px 12px;margin-top:8px;"><div id="chr-cycle-c"></div><div class="lg-refract"></div></div></div>
             <!-- ТАЙМЛАЙН -->
             <div id="chr-tab-timeline" class="chr-tab-content"><div id="chr-tl"></div></div>
             <!-- ПЕРСОНАЖИ -->
-            <div id="chr-tab-chars" class="chr-tab-content"><div class="chr-section"><div class="chr-section-header"><i class="fa-solid fa-book"></i>Дневник</div><div id="chr-diary"></div></div><div class="chr-section"><div class="chr-section-header"><i class="fa-solid fa-users"></i>Персонажи</div><div id="chr-npcs"></div></div></div>
+            <div id="chr-tab-chars" class="chr-tab-content"><div class="chr-section"><div class="chr-section-header"><span class="ci ci-book2"></span>Дневник</div><div id="chr-diary"></div></div><div class="chr-section"><div class="chr-section-header"><span class="ci ci-users"></span>Персонажи</div><div id="chr-npcs"></div></div></div>
             <!-- ПРЕДМЕТЫ -->
-            <div id="chr-tab-items" class="chr-tab-content"><div class="chr-section"><div class="chr-section-header"><i class="fa-solid fa-wallet"></i>Кошельки</div><div id="chr-wallets"></div></div><div class="chr-section"><div class="chr-section-header"><i class="fa-solid fa-box-open"></i>Инвентарь</div><div id="chr-inv"></div></div></div>
+            <div id="chr-tab-items" class="chr-tab-content"><div class="chr-section"><div class="chr-section-header"><span class="ci ci-wallet"></span>Кошельки</div><div id="chr-wallets"></div></div><div class="chr-section"><div class="chr-section-header"><span class="ci ci-cube"></span>Инвентарь</div><div id="chr-inv"></div></div></div>
             <!-- КАРТА -->
-            <div id="chr-tab-map" class="chr-tab-content"><div class="chr-section"><div class="chr-section-header"><i class="fa-solid fa-map"></i>Локации<button class="chr-ibtn" id="chr-map-add" style="margin-left:auto;" title="Добавить"><i class="fa-solid fa-plus"></i></button></div><div class="chr-map chr-card" id="chr-map-c"><svg id="chr-map-svg" viewBox="0 0 500 300"></svg></div><div id="chr-map-e" class="chr-empty" style="display:none;"><i class="fa-solid fa-map"></i>AI добавит локации</div></div></div>
+            <div id="chr-tab-map" class="chr-tab-content"><div class="chr-section"><div class="chr-section-header"><span class="ci ci-map"></span>Локации<button class="chr-ibtn" id="chr-map-add" style="margin-left:auto;" title="Добавить"><span class="ci ci-plus"></span></button></div><div class="chr-map chr-card" id="chr-map-c"><svg id="chr-map-svg" viewBox="0 0 500 300"></svg></div><div id="chr-map-e" class="chr-empty" style="display:none;"><span class="ci ci-xl ci-map"></span>AI добавит локации</div></div></div>
             <!-- КАЛЕНДАРЬ -->
             <div id="chr-tab-cal" class="chr-tab-content">
-                <div class="chr-card" style="padding:10px;">
-                    <div class="chr-cal-hdr"><button class="chr-ibtn" id="chr-cal-p"><i class="fa-solid fa-chevron-left"></i></button><span class="chr-cal-mo" id="chr-cal-mo"></span><button class="chr-ibtn" id="chr-cal-n"><i class="fa-solid fa-chevron-right"></i></button></div>
-                    <div class="chr-cal-grid" id="chr-cal-wd"><div class="chr-cal-wd">Пн</div><div class="chr-cal-wd">Вт</div><div class="chr-cal-wd">Ср</div><div class="chr-cal-wd">Чт</div><div class="chr-cal-wd">Пт</div><div class="chr-cal-wd">Сб</div><div class="chr-cal-wd">Вс</div></div>
-                    <div class="chr-cal-grid" id="chr-cal-g"></div>
-                </div>
-                <div class="chr-section" style="margin-top:10px;"><div class="chr-section-header"><i class="fa-solid fa-list-check"></i>Задачи<button class="chr-ibtn" id="chr-ag-add" style="margin-left:auto;"><i class="fa-solid fa-plus"></i></button></div><div id="chr-agenda"></div></div>
+                <div class="chr-card" style="padding:10px;"><div class="chr-cal-hdr"><button class="chr-ibtn" id="chr-cal-p"><span class="ci ci-chev-l"></span></button><span class="chr-cal-mo" id="chr-cal-mo"></span><button class="chr-ibtn" id="chr-cal-n"><span class="ci ci-chev-r"></span></button></div><div class="chr-cal-grid" id="chr-cal-wd"><div class="chr-cal-wd">Пн</div><div class="chr-cal-wd">Вт</div><div class="chr-cal-wd">Ср</div><div class="chr-cal-wd">Чт</div><div class="chr-cal-wd">Пт</div><div class="chr-cal-wd">Сб</div><div class="chr-cal-wd">Вс</div></div><div class="chr-cal-grid" id="chr-cal-g"></div><div class="lg-refract"></div></div>
+                <div class="chr-section" style="margin-top:10px;"><div class="chr-section-header"><span class="ci ci-check"></span>Задачи<button class="chr-ibtn" id="chr-ag-add" style="margin-left:auto;"><span class="ci ci-plus"></span></button></div><div id="chr-agenda"></div></div>
             </div>
             <!-- БЕРЕМЕННОСТЬ -->
             <div id="chr-tab-preg" class="chr-tab-content">
-                <div class="chr-card" id="chr-preg" style="display:none;padding:12px;">
-                    <div class="chr-section-header"><i class="fa-solid fa-baby"></i>Беременность</div>
-                    <div id="chr-preg-c"></div>
-                </div>
-                <div id="chr-preg-empty" class="chr-empty"><i class="fa-solid fa-baby"></i>Нет данных о беременности.<br>AI добавит тег &lt;pregnancy&gt; когда это произойдёт в сюжете.</div>
+                <div class="chr-card" id="chr-preg" style="display:none;padding:14px;"><div class="chr-section-header"><span class="ci ci-baby"></span>Беременность</div><div id="chr-preg-c"></div><div class="lg-refract"></div></div>
+                <div id="chr-preg-empty" class="chr-empty"><span class="ci ci-xl ci-baby"></span>Нет данных о беременности</div>
             </div>
             <!-- НАСТРОЙКИ -->
             <div id="chr-tab-set" class="chr-tab-content">
-                <div class="chr-card" style="padding:10px 12px;margin-bottom:8px;">
-                    <div class="chr-section-header"><i class="fa-solid fa-puzzle-piece"></i>Модули</div>
-                    <div style="display:grid;gap:5px;padding:0 4px;">
-                        <label style="display:flex;align-items:center;gap:7px;font-size:12px;"><input type="checkbox" id="s-sims" checked>Симс</label>
-                        <label style="display:flex;align-items:center;gap:7px;font-size:12px;"><input type="checkbox" id="s-health" checked>Здоровье</label>
-                        <label style="display:flex;align-items:center;gap:7px;font-size:12px;"><input type="checkbox" id="s-cycle">Цикл</label>
-                        <label style="display:flex;align-items:center;gap:7px;font-size:12px;"><input type="checkbox" id="s-wallet" checked>Кошелёк</label>
-                        <label style="display:flex;align-items:center;gap:7px;font-size:12px;"><input type="checkbox" id="s-diary" checked>Дневник</label>
-                        <label style="display:flex;align-items:center;gap:7px;font-size:12px;"><input type="checkbox" id="s-pregnancy">Беременность</label>
-                    </div>
-                </div>
-                <div class="chr-card" style="padding:10px 12px;margin-bottom:8px;">
-                    <div class="chr-section-header"><i class="fa-solid fa-cake-candles"></i>Дни рождения</div>
-                    <div style="display:grid;gap:6px;padding:0 4px;">
-                        <div><label id="s-label-ubday" style="font-size:11px;color:var(--chr-text-d);display:block;margin-bottom:2px;">ДР {{user}} (ГГГГ/М/Д)</label><input type="text" id="s-ubday" placeholder="1998/6/15" style="width:100%;"></div>
-                        <div><label id="s-label-bbday" style="font-size:11px;color:var(--chr-text-d);display:block;margin-bottom:2px;">ДР {{char}} (ГГГГ/М/Д)</label><input type="text" id="s-bbday" placeholder="2000/3/20" style="width:100%;"></div>
-                    </div>
-                </div>
-                <div class="chr-card" style="padding:10px 12px;margin-bottom:8px;">
-                    <div class="chr-section-header"><i class="fa-solid fa-server"></i>Extra API (экономия контекста)</div>
-                    <div style="display:grid;gap:6px;padding:0 4px;">
-                        <div><label style="font-size:11px;color:var(--chr-text-d);display:block;margin-bottom:2px;">API URL (OpenAI-совместимый)</label><input type="text" id="s-api-url" placeholder="https://api.openai.com/v1" style="width:100%;"></div>
-                        <div><label style="font-size:11px;color:var(--chr-text-d);display:block;margin-bottom:2px;">API Key</label><input type="password" id="s-api-key" placeholder="sk-..." style="width:100%;"></div>
-                        <div><label style="font-size:11px;color:var(--chr-text-d);display:block;margin-bottom:2px;">Модель</label>
-                            <div style="display:flex;gap:4px;align-items:center;">
-                                <input type="text" id="s-api-model" placeholder="gpt-4o-mini" style="flex:1;">
-                                <button class="chr-ibtn" id="s-api-fetch" title="Загрузить список моделей"><i class="fa-solid fa-magnifying-glass"></i></button>
-                            </div>
-                            <select id="s-api-models-list" style="width:100%;margin-top:4px;display:none;padding:6px 8px;background:rgba(255,255,255,.04);color:var(--chr-text);border:1px solid var(--chr-border);border-radius:var(--chr-rs);font-size:12px;">
-                                <option value="">— выберите модель —</option>
-                            </select>
-                            <div id="s-api-fetch-status" style="font-size:10px;color:var(--chr-text-d);margin-top:2px;"></div>
-                        </div>
-                        <div style="font-size:10px;color:var(--chr-text-d);padding:4px 0;">Если настроен — конспекты и анализ пойдут через этот API, не расходуя контекст основного чата.</div>
-                    </div>
-                </div>
-                <div class="chr-card" style="padding:10px 12px;">
-                    <div class="chr-section-header"><i class="fa-solid fa-terminal"></i>Промпт</div>
-                    <textarea id="s-prompt" rows="3" style="width:100%;resize:vertical;" placeholder="Пусто = по умолчанию"></textarea>
-                    <button class="chr-btn" id="s-reset" style="margin-top:4px;"><i class="fa-solid fa-rotate"></i> Сброс</button>
-                </div>
+                <div class="chr-card" style="padding:10px 12px;margin-bottom:8px;"><div class="chr-section-header"><span class="ci ci-puzzle"></span>Модули</div><div style="display:grid;gap:5px;padding:0 4px;"><label style="display:flex;align-items:center;gap:7px;font-size:12px;"><input type="checkbox" id="s-sims" checked>Симс</label><label style="display:flex;align-items:center;gap:7px;font-size:12px;"><input type="checkbox" id="s-health" checked>Здоровье</label><label style="display:flex;align-items:center;gap:7px;font-size:12px;"><input type="checkbox" id="s-cycle">Цикл</label><label style="display:flex;align-items:center;gap:7px;font-size:12px;"><input type="checkbox" id="s-wallet" checked>Кошелёк</label><label style="display:flex;align-items:center;gap:7px;font-size:12px;"><input type="checkbox" id="s-diary" checked>Дневник</label><label style="display:flex;align-items:center;gap:7px;font-size:12px;"><input type="checkbox" id="s-pregnancy">Беременность</label></div><div class="lg-refract"></div></div>
+                <div class="chr-card" style="padding:10px 12px;margin-bottom:8px;"><div class="chr-section-header"><span class="ci ci-cake"></span>Дни рождения</div><div style="display:grid;gap:6px;padding:0 4px;"><div><label id="s-label-ubday" style="font-size:11px;color:var(--chr-text-d);display:block;margin-bottom:2px;">ДР {{user}}</label><input type="text" id="s-ubday" placeholder="1998/6/15" style="width:100%;"></div><div><label id="s-label-bbday" style="font-size:11px;color:var(--chr-text-d);display:block;margin-bottom:2px;">ДР {{char}}</label><input type="text" id="s-bbday" placeholder="2000/3/20" style="width:100%;"></div></div><div class="lg-refract"></div></div>
+                <div class="chr-card" style="padding:10px 12px;margin-bottom:8px;"><div class="chr-section-header"><span class="ci ci-server"></span>Extra API</div><div style="display:grid;gap:6px;padding:0 4px;"><div><label style="font-size:11px;color:var(--chr-text-d);display:block;margin-bottom:2px;">API URL</label><input type="text" id="s-api-url" placeholder="https://api.openai.com/v1" style="width:100%;"></div><div><label style="font-size:11px;color:var(--chr-text-d);display:block;margin-bottom:2px;">API Key</label><input type="password" id="s-api-key" placeholder="sk-..." style="width:100%;"></div><div><label style="font-size:11px;color:var(--chr-text-d);display:block;margin-bottom:2px;">Модель</label><div style="display:flex;gap:4px;align-items:center;"><input type="text" id="s-api-model" placeholder="gpt-4o-mini" style="flex:1;"><button class="chr-ibtn" id="s-api-fetch" title="Загрузить"><span class="ci ci-search"></span></button></div><select id="s-api-models-list" style="width:100%;margin-top:4px;display:none;padding:6px 8px;background:var(--lg);color:var(--chr-text);border:1px solid var(--lg-b);border-radius:var(--chr-rs);font-size:12px;"><option value="">— модель —</option></select><div id="s-api-fetch-status" style="font-size:10px;color:var(--chr-text-d);margin-top:2px;"></div></div></div><div class="lg-refract"></div></div>
+                <div class="chr-card" style="padding:10px 12px;"><div class="chr-section-header"><span class="ci ci-terminal"></span>Промпт</div><textarea id="s-prompt" rows="3" style="width:100%;resize:vertical;" placeholder="Пусто = по умолчанию"></textarea><button class="chr-btn" id="s-reset" style="margin-top:4px;"><span class="ci ci-refresh"></span> Сброс</button><div class="lg-refract"></div></div>
             </div>
         </div>
     </div>

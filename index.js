@@ -325,7 +325,7 @@ function onMsg(idx){if(!S.enabled)return;const chat=getContext()?.chat;if(!chat|
 function onChat(force){if(!S.enabled)return;const chat=getContext()?.chat||[];for(let i=0;i<chat.length;i++){if((force||!chat[i].chronicle_meta)&&chat[i].mes&&hasCD(chat[i].mes)){const p=parse(chat[i].mes);if(p)chat[i].chronicle_meta=p;}}LS=agg();refreshAll();syncUI();}
 
 // ══ UI ══
-const SC={hunger:{n:'Голод',i:'fa-solid fa-utensils',bg:'var(--chr-peach-bg)',bd:'var(--chr-peach-border)',c:'var(--chr-peach)'},hygiene:{n:'Гигиена',i:'fa-solid fa-shower',bg:'var(--chr-blue-bg)',bd:'var(--chr-blue-border)',c:'var(--chr-blue)'},sleep:{n:'Сон',i:'fa-solid fa-moon',bg:'var(--chr-lilac-bg)',bd:'var(--chr-lilac-border)',c:'var(--chr-lilac)'},arousal:{n:'Возбуждение',i:'fa-solid fa-fire',bg:'var(--chr-rose-bg)',bd:'var(--chr-rose-border)',c:'var(--chr-rose)'}};
+const SC={hunger:{n:'Голод',i:'ci ci-utensils',bg:'var(--chr-peach-bg)',bd:'var(--chr-peach-bd)',c:'var(--chr-peach)'},hygiene:{n:'Гигиена',i:'ci ci-droplet',bg:'var(--chr-blue-bg)',bd:'var(--chr-blue-bd)',c:'var(--chr-blue)'},sleep:{n:'Сон',i:'ci ci-moon',bg:'var(--chr-lilac-bg)',bd:'var(--chr-lilac-bd)',c:'var(--chr-lilac)'},arousal:{n:'Возбуждение',i:'ci ci-flame',bg:'var(--chr-rose-bg)',bd:'var(--chr-rose-bd)',c:'var(--chr-rose)'}};
 const MO=['','Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
 function esc(s){const d=document.createElement('div');d.textContent=s;return d.innerHTML;}
 function rn(cn){return cn==='_default'?(getContext()?.name2||'Персонаж'):cn;}
@@ -335,8 +335,10 @@ function refreshAll(){rStatus();rSims();rHealth();rTl();rChars();rItems();rCal()
 function rStatus(){
     $('#chr-date').text(LS.time||'--/--');$('#chr-weather').text(LS.weather||'');$('#chr-loc').text(LS.loc||'—');$('#chr-atmo').text(LS.atmo||'');
     const $t=$('#chr-thoughts').empty();
-    if(LS.thoughts.length)for(const th of LS.thoughts)$t.append(`<div class="chr-thought chr-card"><div class="chr-thought__name">${esc(th.name)}</div>${th.emo?`<div class="chr-thought__emo">${esc(th.emo)}</div>`:''}<div class="chr-thought__text">${esc(th.text)}</div></div>`);
-    else $t.append('<div class="chr-empty"><i class="fa-solid fa-brain"></i>AI ещё не описал мысли</div>');
+    // Filter thoughts to only characters in current scene
+    const sceneThoughts=LS.thoughts.filter(th=>LS.chars.some(c=>{const al=c.toLowerCase(),bl=th.name.toLowerCase();return al===bl||al.startsWith(bl)||bl.startsWith(al);}));
+    if(sceneThoughts.length)for(const th of sceneThoughts)$t.append(`<div class="chr-thought chr-card"><div class="chr-thought__name">${esc(th.name)}</div>${th.emo?`<div class="chr-thought__emo">${esc(th.emo)}</div>`:''}<div class="chr-thought__text">${esc(th.text)}</div></div>`);
+    else $t.append('<div class="chr-empty"><i class="ci ci-brain"></i>AI ещё не описал мысли</div>');
     const $c=$('#chr-costumes').empty();const ce=Object.entries(LS.cos);
     if(ce.length)for(const[c,d]of ce)$c.append(`<div style="margin-bottom:3px;"><span style="color:var(--chr-peach);font-weight:600;font-size:11px;">${esc(c)}:</span> <span style="font-size:11px;color:var(--chr-text-m);">${esc(d)}</span></div>`);
     else $c.append('<div class="chr-empty">Нет</div>');
@@ -344,83 +346,113 @@ function rStatus(){
 
 function rSims(){
     const $c=$('#chr-sims').empty();const names=Object.keys(LS.sims);
-    if(!names.length){$c.append('<div class="chr-empty"><i class="fa-solid fa-heart-pulse"></i>Нет данных</div>');return;}
+    if(!names.length){$c.append('<div class="chr-empty"><i class="ci ci-heart"></i>Нет данных</div>');return;}
     for(const cn of names){const stats=LS.sims[cn];
         let cards='';for(const[key,cfg]of Object.entries(SC)){const val=stats[key]??70;cards+=`<div class="chr-sim-card" style="background:${cfg.bg};border:1px solid ${cfg.bd};"><div class="chr-sim-card__icon" style="color:${cfg.c};"><i class="${cfg.i}"></i></div><div class="chr-sim-card__value" style="color:${cfg.c};">${val}</div><div class="chr-sim-card__label">${cfg.n}</div><div class="chr-sim-card__bar" style="width:${val}%;background:${cfg.c};"></div></div>`;}
-        $c.append(`<div style="margin-bottom:10px;"><div style="font-family:var(--chr-ff);font-size:12px;font-weight:600;color:var(--chr-text-m);margin-bottom:6px;padding:0 4px;"><i class="fa-solid fa-user" style="margin-right:4px;"></i>${esc(rn(cn))}</div><div class="chr-sims-grid">${cards}</div></div>`);
+        $c.append(`<div style="margin-bottom:10px;"><div style="font-family:var(--chr-ff);font-size:12px;font-weight:600;color:var(--chr-text-m);margin-bottom:6px;padding:0 4px;"><i class="ci ci-user" style="margin-right:4px;"></i>${esc(rn(cn))}</div><div class="chr-sims-grid">${cards}</div></div>`);
     }
 }
 
 function rHealth(){
     const $c=$('#chr-health').empty();const names=Object.keys(LS.health);
-    if(!names.length){$c.append('<div class="chr-empty"><i class="fa-solid fa-kit-medical"></i>Нет данных</div>');return;}
-    for(const cn of names){const h=LS.health[cn];let html=`<div style="font-family:var(--chr-ff);font-size:12px;font-weight:600;color:var(--chr-text-m);margin-bottom:6px;"><i class="fa-solid fa-user"></i> ${esc(rn(cn))}</div>`;
-        html+=`<div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:4px;"><span class="chr-tag" style="background:${h.hp<50?'var(--chr-rose-bg)':'var(--chr-mint-bg)'};color:${h.hp<50?'var(--chr-rose)':'var(--chr-mint)'};" title="HP"><i class="fa-solid fa-heart"></i> ${h.hp}</span>`;
-        if(h.intox?.v>0)html+=`<span class="chr-tag" style="background:var(--chr-peach-bg);color:var(--chr-peach);" title="Опьянение"><i class="fa-solid fa-wine-glass"></i> ${h.intox.v}%${h.intox.r?' — '+esc(h.intox.r):''}</span>`;
+    if(!names.length){$c.append('<div class="chr-empty"><i class="ci ci-medkit"></i>Нет данных</div>');return;}
+    for(const cn of names){const h=LS.health[cn];let html=`<div style="font-family:var(--chr-ff);font-size:12px;font-weight:600;color:var(--chr-text-m);margin-bottom:6px;"><i class="ci ci-user"></i> ${esc(rn(cn))}</div>`;
+        html+=`<div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:4px;"><span class="chr-tag" style="background:${h.hp<50?'var(--chr-rose-bg)':'var(--chr-mint-bg)'};color:${h.hp<50?'var(--chr-rose)':'var(--chr-mint)'};" title="HP"><i class="ci ci-heart"></i> ${h.hp}</span>`;
+        if(h.intox?.v>0)html+=`<span class="chr-tag" style="background:var(--chr-peach-bg);color:var(--chr-peach);" title="Опьянение"><i class="ci ci-wine"></i> ${h.intox.v}%${h.intox.r?' — '+esc(h.intox.r):''}</span>`;
         html+=`</div>`;
-        for(const inj of h.injuries)html+=`<div class="chr-inj"><i class="fa-solid fa-bandage" style="width:14px;text-align:center;"></i> ${esc(inj.n)} <span class="chr-tag">${esc(inj.s)}</span></div>`;
-        for(const hab of h.habits)html+=`<div class="chr-hab"><i class="fa-solid fa-smoking" style="width:14px;text-align:center;"></i> ${esc(hab.n)} <span style="color:var(--chr-text-d);">${esc(hab.d)}</span></div>`;
+        for(const inj of h.injuries)html+=`<div class="chr-inj"><i class="ci ci-bandage" style="width:14px;text-align:center;"></i> ${esc(inj.n)} <span class="chr-tag">${esc(inj.s)}</span></div>`;
+        for(const hab of h.habits)html+=`<div class="chr-hab"><i class="ci ci-smoking" style="width:14px;text-align:center;"></i> ${esc(hab.n)} <span style="color:var(--chr-text-d);">${esc(hab.d)}</span></div>`;
         $c.append(`<div class="chr-card" style="padding:10px 12px;margin-bottom:6px;">${html}</div>`);
     }
     const cy=LS.cycle;if(cy.day!==null){$('#chr-cycle').show();const $cc=$('#chr-cycle-c').empty();let html=`<div style="display:flex;gap:10px;align-items:flex-start;"><span style="font-size:24px;font-weight:700;color:var(--chr-rose);font-family:var(--chr-ff);">День${cy.day}</span><div style="flex:1;">`;
         if(cy.phase)html+=`<div style="font-size:12px;font-weight:600;color:var(--chr-text);">${esc(cy.phase)}</div>`;
-        const tags=[];if(cy.fertile)tags.push(`<span class="chr-tag" style="background:${cy.fertile.match(/yes|да/i)?'var(--chr-rose-bg)':'var(--chr-mint-bg)'};color:${cy.fertile.match(/yes|да/i)?'var(--chr-rose)':'var(--chr-mint)'};" title="Фертильность"><i class="fa-solid fa-leaf"></i> ${esc(cy.fertile)}</span>`);if(cy.libido)tags.push(`<span class="chr-tag" style="background:var(--chr-rose-bg);color:var(--chr-rose);" title="Либидо"><i class="fa-solid fa-fire"></i> ${esc(cy.libido)}</span>`);
+        const tags=[];if(cy.fertile)tags.push(`<span class="chr-tag" style="background:${cy.fertile.match(/yes|да/i)?'var(--chr-rose-bg)':'var(--chr-mint-bg)'};color:${cy.fertile.match(/yes|да/i)?'var(--chr-rose)':'var(--chr-mint)'};" title="Фертильность"><i class="ci ci-leaf"></i> ${esc(cy.fertile)}</span>`);if(cy.libido)tags.push(`<span class="chr-tag" style="background:var(--chr-rose-bg);color:var(--chr-rose);" title="Либидо"><i class="ci ci-flame"></i> ${esc(cy.libido)}</span>`);
         if(tags.length)html+=`<div style="display:flex;gap:3px;margin-top:3px;">${tags.join('')}</div>`;
-        if(cy.mood)html+=`<div style="font-size:11px;color:var(--chr-text-m);margin-top:3px;"><i class="fa-solid fa-comment" style="width:14px;text-align:center;"></i> ${esc(cy.mood)}</div>`;
-        if(cy.physical)html+=`<div style="font-size:11px;color:var(--chr-text-m);margin-top:2px;"><i class="fa-solid fa-stethoscope" style="width:14px;text-align:center;"></i> ${esc(cy.physical)}</div>`;
+        if(cy.mood)html+=`<div style="font-size:11px;color:var(--chr-text-m);margin-top:3px;"><i class="ci ci-brain" style="width:14px;text-align:center;"></i> ${esc(cy.mood)}</div>`;
+        if(cy.physical)html+=`<div style="font-size:11px;color:var(--chr-text-m);margin-top:2px;"><i class="ci ci-steth" style="width:14px;text-align:center;"></i> ${esc(cy.physical)}</div>`;
         html+=`</div></div>`;$cc.append(html);
     }else $('#chr-cycle').hide();
 }
 
-function rTl(){const $t=$('#chr-tl').empty();if(LS.events.length)for(const ev of LS.events.slice(-50).reverse())$t.append(`<div class="chr-tl chr-card" data-level="${esc(ev.level)}"><div class="chr-tl__time">${esc(ev.time)}</div><div class="chr-tl__text">${esc(ev.summary)}</div></div>`);else $t.append('<div class="chr-empty"><i class="fa-solid fa-timeline"></i>Событий нет</div>');}
+function rTl(){const $t=$('#chr-tl').empty();if(LS.events.length)for(const ev of LS.events.slice(-50).reverse())$t.append(`<div class="chr-tl chr-card" data-level="${esc(ev.level)}"><div class="chr-tl__time">${esc(ev.time)}</div><div class="chr-tl__text">${esc(ev.summary)}</div></div>`);else $t.append('<div class="chr-empty"><i class="ci ci-timeline"></i>Событий нет</div>');}
 
 function rChars(){
-    const $d=$('#chr-diary').empty();if(LS.diary.length)for(const d of LS.diary.slice(-20).reverse())$d.append(`<div class="chr-diary chr-card"><div class="chr-diary__who"><i class="fa-solid fa-feather"></i>${esc(d.who)}</div><div class="chr-diary__text">${esc(d.text)}</div><div class="chr-diary__when">${esc(d.time)}</div></div>`);else $d.append('<div class="chr-empty"><i class="fa-solid fa-book"></i>Записей нет</div>');
+    const $d=$('#chr-diary').empty();
+    if(LS.diary.length)for(const d of LS.diary.slice(-20).reverse())$d.append(`<div class="chr-diary chr-card"><div class="chr-diary__who"><i class="ci ci-feather"></i>${esc(d.who)}</div><div class="chr-diary__text">${esc(d.text)}</div><div class="chr-diary__when">${esc(d.time)}</div></div>`);
+    else $d.append('<div class="chr-empty"><i class="ci ci-book2"></i>Записей нет</div>');
+
     const $n=$('#chr-npcs').empty();const ctx=getContext();
-    const uName=ctx?.name1||'';const bName=ctx?.name2||'';
-    // helper: render a main character card (bot or user)
-    function mkMain(name,isBg,bdVal,showAf){
-        const af=showAf&&(LS.aff[name]||Object.entries(LS.aff).find(([k])=>{const kl=k.toLowerCase(),nl=name.toLowerCase();return kl===nl||kl.startsWith(nl)||nl.startsWith(kl);})?.[1]);
-        const pr=LS.chars.some(c=>c.toLowerCase()===name.toLowerCase()||c.toLowerCase().startsWith(name.toLowerCase())||name.toLowerCase().startsWith(c.toLowerCase()));
-        let tags=`<span class="chr-tag" style="background:${isBg};color:var(--chr-peach);">${isBg.includes('peach')?'юзер':'бот'}</span>`;
-        if(bdVal)tags+=`<span class="chr-tag"><i class="fa-solid fa-cake-candles" style="font-size:9px;"></i> ${esc(bdVal)} ${zodiac(bdVal)}</span>`;
-        if(af){const cl=af.v>=0?'mint':'rose';tags+=`<span class="chr-tag" style="background:var(--chr-${cl}-bg);color:var(--chr-${cl});"><i class="fa-solid fa-heart" style="font-size:9px;"></i> ${af.v>0?'+':''}${af.v}</span>`;}
-        if(pr)tags+=`<span class="chr-tag" style="background:var(--chr-blue-bg);color:var(--chr-blue);">в сцене</span>`;
-        $n.prepend(`<div class="chr-npc chr-card" style="border-color:rgba(255,255,255,.08);"><div class="chr-npc__av" style="background:${isBg};color:var(--chr-text);">${name.charAt(0).toUpperCase()}</div><div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:600;color:var(--chr-text);">${esc(name)}</div><div class="chr-npc__tags" style="margin-top:3px;">${tags}</div></div></div>`);
-    }
-    if(bName)mkMain(bName,'var(--chr-blue-bg)',S.botBday,true);
-    if(uName)mkMain(uName,'var(--chr-peach-bg)',S.userBday,false);
-    // Fuzzy name match helper
+    const uName=ctx?.name1||'',bName=ctx?.name2||'';
     function nameMatch(a,b){const al=a.toLowerCase(),bl=b.toLowerCase();return al===bl||al.startsWith(bl)||bl.startsWith(al);}
-    // NPC cards
-    for(const name of Object.keys(LS.npcs)){const npc=LS.npcs[name];const af=LS.aff[name];const pr=LS.chars.some(c=>nameMatch(c,name));let tags='';if(npc.gen)tags+=`<span class="chr-tag">${esc(npc.gen)}</span>`;if(npc.age)tags+=`<span class="chr-tag">${npc.age}</span>`;if(npc.rel)tags+=`<span class="chr-tag" style="background:var(--chr-blue-bg);color:var(--chr-blue);">${esc(npc.rel)}</span>`;if(af){const cl=af.v>=0?'mint':'rose';tags+=`<span class="chr-tag" style="background:var(--chr-${cl}-bg);color:var(--chr-${cl});"><i class="fa-solid fa-heart" style="font-size:9px;"></i> ${af.v>0?'+':''}${af.v}</span>`;}if(pr)tags+=`<span class="chr-tag" style="background:var(--chr-mint-bg);color:var(--chr-mint);">в сцене</span>`;
-        const colors=['var(--chr-lilac-bg)','var(--chr-blue-bg)','var(--chr-peach-bg)','var(--chr-rose-bg)','var(--chr-mint-bg)'];const ci=name.length%colors.length;
-        $n.append(`<div class="chr-npc chr-card">${npc.bd?`<div class="chr-npc__bd"><i class="fa-solid fa-cake-candles"></i> ${esc(npc.bd)} ${zodiac(npc.bd)}</div>`:''}<div class="chr-npc__av" style="background:${colors[ci]};color:var(--chr-text);">${name.charAt(0).toUpperCase()}</div><div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:600;color:var(--chr-text);">${esc(name)}</div>${npc.app?`<div style="font-size:10px;color:var(--chr-text-d);">${esc(npc.app)}</div>`:''}<div class="chr-npc__tags" style="margin-top:3px;">${tags}</div></div></div>`);}
-    // Show chars in scene that have no <npc> card yet
-    const npcNamesLower=Object.keys(LS.npcs).map(n=>n.toLowerCase());
+    function isUB(name){return nameMatch(name,uName)||nameMatch(name,bName);}
+    function inScene(name){return LS.chars.some(c=>nameMatch(c,name));}
+    const colors=['var(--chr-lilac-bg)','var(--chr-blue-bg)','var(--chr-peach-bg)','var(--chr-rose-bg)','var(--chr-mint-bg)'];
+
+    // Helper: render one NPC card
+    function mkCard(name,npc,dimmed){
+        const af=LS.aff[name]||Object.entries(LS.aff).find(([k])=>nameMatch(k,name))?.[1];
+        const pr=inScene(name);
+        let tags='';
+        if(npc?.gen)tags+=`<span class="chr-tag">${esc(npc.gen)}</span>`;
+        if(npc?.age)tags+=`<span class="chr-tag">${npc.age}</span>`;
+        if(npc?.rel)tags+=`<span class="chr-tag" style="background:var(--chr-blue-bg);color:var(--chr-blue);">${esc(npc.rel)}</span>`;
+        if(af){const cl=af.v>=0?'mint':'rose';tags+=`<span class="chr-tag" style="background:var(--chr-${cl}-bg);color:var(--chr-${cl});"><i class="ci ci-heart" style="font-size:9px;"></i> ${af.v>0?'+':''}${af.v}</span>`;}
+        if(pr)tags+=`<span class="chr-tag" style="background:var(--chr-mint-bg);color:var(--chr-mint);">в сцене</span>`;
+        const ci=name.length%colors.length;
+        const opacity=dimmed?'opacity:.45;':'';
+        return`<div class="chr-npc chr-card" style="${opacity}">${npc?.bd?`<div class="chr-npc__bd"><i class="ci ci-cake"></i> ${esc(npc.bd)} ${zodiac(npc.bd)}</div>`:''}<div class="chr-npc__av" style="background:${colors[ci]};color:var(--chr-text);">${name.charAt(0).toUpperCase()}</div><div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:600;color:var(--chr-text);">${esc(name)}</div>${npc?.app?`<div style="font-size:10px;color:var(--chr-text-d);">${esc(npc.app)}</div>`:''}<div class="chr-npc__tags" style="margin-top:3px;">${tags}</div></div></div>`;
+    }
+
+    // ── Bot & User (always visible) ──
+    function mkMain(name,isBg,bdVal,showAf){
+        const af=showAf&&(LS.aff[name]||Object.entries(LS.aff).find(([k])=>nameMatch(k,name))?.[1]);
+        const pr=inScene(name);
+        let tags=`<span class="chr-tag" style="background:${isBg};color:var(--chr-peach);">${isBg.includes('peach')?'юзер':'бот'}</span>`;
+        if(bdVal)tags+=`<span class="chr-tag"><i class="ci ci-cake" style="font-size:9px;"></i> ${esc(bdVal)} ${zodiac(bdVal)}</span>`;
+        if(af){const cl=af.v>=0?'mint':'rose';tags+=`<span class="chr-tag" style="background:var(--chr-${cl}-bg);color:var(--chr-${cl});"><i class="ci ci-heart" style="font-size:9px;"></i> ${af.v>0?'+':''}${af.v}</span>`;}
+        if(pr)tags+=`<span class="chr-tag" style="background:var(--chr-mint-bg);color:var(--chr-mint);">в сцене</span>`;
+        $n.append(`<div class="chr-npc chr-card" style="border-color:rgba(255,255,255,.08);"><div class="chr-npc__av" style="background:${isBg};color:var(--chr-text);">${name.charAt(0).toUpperCase()}</div><div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:600;color:var(--chr-text);">${esc(name)}</div><div class="chr-npc__tags" style="margin-top:3px;">${tags}</div></div></div>`);
+    }
+    if(uName)mkMain(uName,'var(--chr-peach-bg)',S.userBday,false);
+    if(bName)mkMain(bName,'var(--chr-blue-bg)',S.botBday,true);
+
+    // ── В СЦЕНЕ — NPC и chars present ──
+    const sceneNpcs=[],knownNpcs=[];
+    for(const name of Object.keys(LS.npcs)){
+        if(isUB(name))continue; // skip user/bot
+        if(inScene(name))sceneNpcs.push(name);else knownNpcs.push(name);
+    }
+    // Also add chars in scene without NPC card
+    const sceneOnly=[];
     for(const name of LS.chars){
-        const nl=name.toLowerCase();
-        // Skip if it's user or bot (fuzzy)
-        if(nameMatch(nl,uName.toLowerCase())||nameMatch(nl,bName.toLowerCase()))continue;
-        // Skip if already shown as NPC card (fuzzy)
-        if(npcNamesLower.some(k=>nameMatch(nl,k)))continue;
-        // Show as basic "in scene" card
-        const colors2=['var(--chr-lilac-bg)','var(--chr-blue-bg)','var(--chr-peach-bg)','var(--chr-rose-bg)','var(--chr-mint-bg)'];
-        const ci2=name.length%colors2.length;const af=LS.aff[name];
-        let tags2='<span class="chr-tag" style="background:var(--chr-mint-bg);color:var(--chr-mint);">в сцене</span>';
-        if(af){const cl=af.v>=0?'mint':'rose';tags2+=`<span class="chr-tag" style="background:var(--chr-${cl}-bg);color:var(--chr-${cl});"><i class="fa-solid fa-heart" style="font-size:9px;"></i> ${af.v>0?'+':''}${af.v}</span>`;}
-        $n.append(`<div class="chr-npc chr-card"><div class="chr-npc__av" style="background:${colors2[ci2]};color:var(--chr-text);">${name.charAt(0).toUpperCase()}</div><div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:600;color:var(--chr-text);">${esc(name)}</div><div class="chr-npc__tags" style="margin-top:3px;">${tags2}</div></div></div>`);
+        if(isUB(name))continue;
+        const hasNpc=Object.keys(LS.npcs).some(k=>nameMatch(k,name));
+        if(!hasNpc&&!sceneOnly.some(s=>nameMatch(s,name)))sceneOnly.push(name);
+    }
+
+    if(sceneNpcs.length||sceneOnly.length){
+        $n.append('<div class="chr-section-header" style="padding:6px 4px;margin-top:6px;"><i class="ci ci-eye"></i>В сцене</div>');
+        for(const name of sceneNpcs)$n.append(mkCard(name,LS.npcs[name],false));
+        for(const name of sceneOnly)$n.append(mkCard(name,null,false));
+    }
+
+    // ── ИЗВЕСТНЫЕ — NPC not in scene (dimmed, collapsible) ──
+    if(knownNpcs.length){
+        $n.append(`<div class="chr-section-header" style="padding:6px 4px;margin-top:8px;cursor:pointer;" id="chr-known-toggle"><i class="ci ci-book"></i>Известные (${knownNpcs.length}) <i class="ci ci-chev-d" style="margin-left:auto;font-size:10px;opacity:.4;"></i></div>`);
+        const $known=$('<div id="chr-known-list" style="display:none;"></div>');
+        for(const name of knownNpcs)$known.append(mkCard(name,LS.npcs[name],true));
+        $n.append($known);
     }
 }
 function rItems(){
     const $w=$('#chr-wallets').empty();const wn=Object.keys(LS.wallets);
-    if(wn.length)for(const cn of wn){const w=LS.wallets[cn];let tx='';for(const t of w.txs.slice(-5).reverse()){const sp=t.t==='spend';tx+=`<div class="chr-tx"><div class="chr-tx__icon" style="background:${sp?'var(--chr-rose-bg)':'var(--chr-mint-bg)'};color:${sp?'var(--chr-rose)':'var(--chr-mint)'};">${sp?'<i class="fa-solid fa-arrow-down"></i>':'<i class="fa-solid fa-arrow-up"></i>'}</div><div class="chr-tx__info"><div class="chr-tx__cat">${esc(t.cat)}</div><div class="chr-tx__note">${esc(t.note)}</div></div><div class="chr-tx__amt" style="color:${sp?'var(--chr-rose)':'var(--chr-mint)'};">${sp?'-':'+'}${t.a}${t.cur||'₽'}</div></div>`;}
+    if(wn.length)for(const cn of wn){const w=LS.wallets[cn];let tx='';for(const t of w.txs.slice(-5).reverse()){const sp=t.t==='spend';tx+=`<div class="chr-tx"><div class="chr-tx__icon" style="background:${sp?'var(--chr-rose-bg)':'var(--chr-mint-bg)'};color:${sp?'var(--chr-rose)':'var(--chr-mint)'};">${sp?'<i class="ci ci-arrowdn"></i>':'<i class="ci ci-arrowup"></i>'}</div><div class="chr-tx__info"><div class="chr-tx__cat">${esc(t.cat)}</div><div class="chr-tx__note">${esc(t.note)}</div></div><div class="chr-tx__amt" style="color:${sp?'var(--chr-rose)':'var(--chr-mint)'};">${sp?'-':'+'}${t.a}${t.cur||'₽'}</div></div>`;}
         $w.append(`<div class="chr-card" style="padding:10px 12px;margin-bottom:6px;"><div style="text-align:center;margin-bottom:6px;"><div style="font-size:10px;color:var(--chr-text-d);">${esc(rn(cn))}</div><div style="font-family:var(--chr-ff);font-size:22px;font-weight:700;color:var(--chr-text);">${w.bal.toLocaleString('ru-RU')}<span style="font-size:12px;color:var(--chr-text-d);">${w.cur}</span></div></div>${tx}</div>`);}
-    else $w.append('<div class="chr-empty"><i class="fa-solid fa-wallet"></i>Нет данных</div>');
+    else $w.append('<div class="chr-empty"><i class="ci ci-wallet"></i>Нет данных</div>');
     // Inventory
     const $inv=$('#chr-inv').empty();const itemEntries=Object.entries(LS.items);
-    if(itemEntries.length){for(const[name,info]of itemEntries){$inv.append(`<div class="chr-card" style="padding:7px 10px;margin-bottom:3px;display:flex;align-items:center;gap:8px;"><i class="fa-solid fa-cube" style="color:var(--chr-blue);font-size:12px;"></i><div style="flex:1;min-width:0;"><div style="font-size:12px;font-weight:600;color:var(--chr-text);">${esc(name)}</div>${info.desc?`<div style="font-size:10px;color:var(--chr-text-d);">${esc(info.desc)}</div>`:''}</div>${info.holder?`<span class="chr-tag"><i class="fa-solid fa-user" style="font-size:8px;"></i> ${esc(info.holder)}</span>`:''}</div>`);}}
-    else $inv.append('<div class="chr-empty"><i class="fa-solid fa-box-open"></i>Пусто</div>');
+    if(itemEntries.length){for(const[name,info]of itemEntries){$inv.append(`<div class="chr-card" style="padding:7px 10px;margin-bottom:3px;display:flex;align-items:center;gap:8px;"><i class="ci ci-cube" style="color:var(--chr-blue);font-size:12px;"></i><div style="flex:1;min-width:0;"><div style="font-size:12px;font-weight:600;color:var(--chr-text);">${esc(name)}</div>${info.desc?`<div style="font-size:10px;color:var(--chr-text-d);">${esc(info.desc)}</div>`:''}</div>${info.holder?`<span class="chr-tag"><i class="ci ci-user" style="font-size:8px;"></i> ${esc(info.holder)}</span>`:''}</div>`);}}
+    else $inv.append('<div class="chr-empty"><i class="ci ci-box"></i>Пусто</div>');
 }
 
 // ── Pregnancy display ──
@@ -433,13 +465,13 @@ function rPreg(){
     html+=`<div style="flex:1;">`;
     if(p.trimester)html+=`<div style="font-size:12px;font-weight:600;color:var(--chr-text);">${p.trimester} триместр</div>`;
     const tags=[];
-    if(p.size)tags.push(`<span class="chr-tag" style="background:var(--chr-rose-bg);color:var(--chr-rose);"><i class="fa-solid fa-baby" style="font-size:8px;"></i> ${esc(p.size)}</span>`);
-    if(p.weightGain)tags.push(`<span class="chr-tag" style="background:var(--chr-peach-bg);color:var(--chr-peach);"><i class="fa-solid fa-weight-scale" style="font-size:8px;"></i> +${esc(p.weightGain)}</span>`);
+    if(p.size)tags.push(`<span class="chr-tag" style="background:var(--chr-rose-bg);color:var(--chr-rose);"><i class="ci ci-baby" style="font-size:8px;"></i> ${esc(p.size)}</span>`);
+    if(p.weightGain)tags.push(`<span class="chr-tag" style="background:var(--chr-peach-bg);color:var(--chr-peach);"><i class="ci ci-weight" style="font-size:8px;"></i> +${esc(p.weightGain)}</span>`);
     if(tags.length)html+=`<div style="display:flex;flex-wrap:wrap;gap:3px;margin-top:4px;">${tags.join('')}</div>`;
-    if(p.baby)html+=`<div style="font-size:11px;color:var(--chr-text-m);margin-top:4px;"><i class="fa-solid fa-baby" style="width:14px;text-align:center;font-size:10px;"></i> ${esc(p.baby)}</div>`;
-    if(p.symptoms)html+=`<div style="font-size:11px;color:var(--chr-text-m);margin-top:2px;"><i class="fa-solid fa-stethoscope" style="width:14px;text-align:center;font-size:10px;"></i> ${esc(p.symptoms)}</div>`;
-    if(p.mood)html+=`<div style="font-size:11px;color:var(--chr-text-m);margin-top:2px;"><i class="fa-solid fa-face-smile" style="width:14px;text-align:center;font-size:10px;"></i> ${esc(p.mood)}</div>`;
-    if(p.nextCheckup)html+=`<div style="font-size:10px;color:var(--chr-text-d);margin-top:4px;"><i class="fa-solid fa-calendar-check" style="width:14px;text-align:center;font-size:9px;"></i> Следующий осмотр: ${esc(p.nextCheckup)}</div>`;
+    if(p.baby)html+=`<div style="font-size:11px;color:var(--chr-text-m);margin-top:4px;"><i class="ci ci-baby" style="width:14px;text-align:center;font-size:10px;"></i> ${esc(p.baby)}</div>`;
+    if(p.symptoms)html+=`<div style="font-size:11px;color:var(--chr-text-m);margin-top:2px;"><i class="ci ci-steth" style="width:14px;text-align:center;font-size:10px;"></i> ${esc(p.symptoms)}</div>`;
+    if(p.mood)html+=`<div style="font-size:11px;color:var(--chr-text-m);margin-top:2px;"><i class="ci ci-smile" style="width:14px;text-align:center;font-size:10px;"></i> ${esc(p.mood)}</div>`;
+    if(p.nextCheckup)html+=`<div style="font-size:10px;color:var(--chr-text-d);margin-top:4px;"><i class="ci ci-calcheck" style="width:14px;text-align:center;font-size:9px;"></i> Следующий осмотр: ${esc(p.nextCheckup)}</div>`;
     html+=`</div></div>`;
     $c.append(html);
 }
@@ -455,7 +487,7 @@ function rCal(){
     let sd=0;const sm=LS.time.match(/(\d{4})\D+(\d{1,2})\D+(\d{1,2})/);if(sm&&+sm[1]===cY&&+sm[2]===cM)sd=+sm[3];
     for(let i=0;i<sw;i++)$g.append('<div class="chr-cal-d dim"></div>');
     for(let d=1;d<=days;d++){let cls='chr-cal-d';if(d===sd)cls+=' today';let dots='';if(evD.has(d))dots+='<span style="width:3px;height:3px;border-radius:50%;background:var(--chr-peach);display:inline-block;"></span>';if(bdD.has(d))dots+='<span style="width:3px;height:3px;border-radius:50%;background:var(--chr-rose);display:inline-block;"></span>';if(agD.has(d))dots+='<span style="width:3px;height:3px;border-radius:50%;background:var(--chr-blue);display:inline-block;"></span>';$g.append(`<div class="${cls}">${d}<div style="display:flex;gap:2px;justify-content:center;">${dots}</div></div>`);}
-    const $a=$('#chr-agenda').empty();if(LS.agenda.length)for(const a of LS.agenda)$a.append(`<div class="chr-card" style="padding:7px 10px;margin-bottom:3px;display:flex;align-items:center;gap:6px;font-size:12px;"><span style="color:var(--chr-blue);">✓</span><span style="color:var(--chr-text);flex:1;">${esc(a.t)}</span>${a.d?`<span style="font-size:10px;color:var(--chr-text-d);">${esc(a.d)}</span>`:''}</div>`);else $a.append('<div class="chr-empty"><i class="fa-solid fa-list-check"></i>Нет</div>');
+    const $a=$('#chr-agenda').empty();if(LS.agenda.length)for(const a of LS.agenda)$a.append(`<div class="chr-card" style="padding:7px 10px;margin-bottom:3px;display:flex;align-items:center;gap:6px;font-size:12px;"><span style="color:var(--chr-blue);">✓</span><span style="color:var(--chr-text);flex:1;">${esc(a.t)}</span>${a.d?`<span style="font-size:10px;color:var(--chr-text-d);">${esc(a.d)}</span>`:''}</div>`);else $a.append('<div class="chr-empty"><i class="ci ci-check"></i>Нет</div>');
 }
 
 function rMap(){
@@ -561,12 +593,13 @@ function initBtns(){
     $(document).on('click','#chr-cal-n',()=>{cM++;if(cM>12){cM=1;cY++;}rCal();});
     $(document).on('click','#chr-ag-add',()=>{const t=prompt('Задача:');if(!t)return;const d=prompt('Дата (ГГГГ/М/Д):')||'';LS.agenda.push({d,t,done:false});rCal();});
     $(document).on('click','#chr-map-add',()=>{const n=prompt('Название (Дом·Кухня):');if(!n)return;const id=n.toLowerCase().replace(/[·\s>/\\]/g,'_').replace(/[^a-zа-яё0-9_]/gi,'');if(!LS.mapN[id])LS.mapN[id]={name:n,desc:'',x:40+Object.keys(LS.mapN).length%4*120,y:30};rMap();});
+    $(document).on('click','#chr-known-toggle',()=>{$('#chr-known-list').slideToggle(200);$('#chr-known-toggle .fa-chevron-down').toggleClass('fa-chevron-down fa-chevron-up');});
     // Fetch models from Extra API
     $(document).on('click','#s-api-fetch',async()=>{
         const url=$('#s-api-url').val().trim();const key=$('#s-api-key').val().trim();
         if(!url){$('#s-api-fetch-status').text('Введите API URL').css('color','var(--chr-rose)');return;}
         const $btn=$('#s-api-fetch'),$status=$('#s-api-fetch-status'),$list=$('#s-api-models-list');
-        $btn.prop('disabled',true).find('i').removeClass('fa-magnifying-glass').addClass('fa-spinner fa-spin');
+        $btn.prop('disabled',true).find('.ci').css('animation','spin .8s linear infinite');
         $status.text('Загрузка...').css('color','var(--chr-text-d)');
         try{
             const modelsUrl=url.replace(/\/+$/,'')+'/models';
@@ -586,7 +619,7 @@ function initBtns(){
         }catch(err){
             $status.text(`Ошибка: ${err.message}`).css('color','var(--chr-rose)');$list.hide();
         }finally{
-            $btn.prop('disabled',false).find('i').removeClass('fa-spinner fa-spin').addClass('fa-magnifying-glass');
+            $btn.prop('disabled',false).find('.ci').css('animation','');
         }
     });
     // Select model from dropdown
