@@ -5,7 +5,7 @@ import{renderExtensionTemplateAsync,getContext,extension_settings}from'/scripts/
 import{getSlideToggleOptions,saveSettingsDebounced,eventSource,event_types}from'/script.js';
 import{slideToggle}from'/lib.js';
 
-const EN='chronicle',VER='0.5.0';
+const EN='chronicle',VER='0.7.0';
 const _u=import.meta.url,_m=_u.match(/\/scripts\/extensions\/(third-party\/[^/]+)\//);
 const EF=_m?_m[1]:'third-party/chronicle',TP=`${EF}/assets/templates`;
 
